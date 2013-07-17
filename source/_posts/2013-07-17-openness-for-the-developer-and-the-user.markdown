@@ -3,7 +3,8 @@ layout: post
 title: "Openness for the Developer &amp; the User"
 date: 2013-07-17 18:48
 comments: true
-categories: [iOS, Android, Open, User]
+categories: [Opinion]
+tags: [iOS, Android, Open Source, User]
 ---
 
 I recently saw this comment in a Hackernews Thread, in reference to the battery performance characteristics of major mobile devices. Emphasis mine:
