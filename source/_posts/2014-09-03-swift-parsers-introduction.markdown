@@ -1,7 +1,7 @@
 ---
 layout: post
-title: "Swift Backends - Interfaces"
-date: 2014-09-03 17:46:45 +0100
+title: "Swift Parsers - Introduction"
+date: 2014-09-03 15:00:00 +0100
 comments: true
 categories: 
 ---
@@ -36,13 +36,11 @@ Applying these methods will just not work in Swift. Pure Swift constructs are cl
 
 However there are other ways of constructing and building Applications, using Abstractions that seem far away from the Gang-of-Four, Object Oriented Programming and the more dynamic idioms of Objective-C. Functional Programming provides us with abstractions that help us to dispense with both the repetition but without sacrificing safety and predictability. These techniques can be employed without the need to read 42 tutorials about what a Monad is and isn't. Functional Programming has a few fundamental particles, once we learn how they can be applied, the mathematics behind them become a mainly academic exercise that can be ignored if we want to.
 
-## Applying to Parsing
-
-It looks like ['How to Parse JSON in Swift'](http://robnapier.net/functional-wish-fulfillment) as become the ['Haskell Monad Tutorial'](http://www.haskell.org/haskellwiki/Monad_tutorials_timeline). However, it is a great place to get started with some new ways of thinking as many of us understand how the Static-but-inferred typing of Swift changes how we can think about programming problems.
+## Parser Requirements
 
 In Objective-C, Parsing can be a minefield of typing and branching. I don't think I'd be going out on a limb to say that it is one of the most fragile parts of most codebases. If an Objective-C Application has any Unit Tests whatsoever, the Parsing components will have the best coverage.
 
-I'm defining 'Parsing' to be the process of extracting data from [data serialisation format](http://en.wikipedia.org/wiki/Comparison_of_data_serialization_formats) to a Model construct that is usable by the rest of the Application. The Parser itself can have some or all of the following requirements:
+I'm defining 'Parsing' to be the process of extracting data from [data serialisation format](http://en.wikipedia.org/wiki/Comparison_of_data_serialization_formats) to a Model construct that is usable by the rest of the Application[^monadic-parser]. The Parser itself can have some or all of the following requirements:
 
 1. Check that a value exists for a given key or node in a tree-like structure exists.
 2. Distinguish between a terminal value in the Data Serialization itself versus the value not existing at all. For example a ```null``` value in a JSON Object rather than a value missing from the JSON itself.
@@ -57,59 +55,21 @@ I'm defining 'Parsing' to be the process of extracting data from [data serialisa
 11. Write Unit Tests for all of the boundary conditions, so we can be super-certain that our understanding of the serialisation format holds true in the implementation.
 12. Provide a minimal interface for pulling data out of the Serialization, avoiding duplication. Any conveniences for common compound data fetches can be composed on top of the minimal interface.
 
+This is not an exhastive list of requirements and it has already exhausted you and I. 
+
+There's a lot going on and this would require a substantial effort in an Imperative style using Objective-C. Libraries and Frameworks can help a lot, but they can only go so far. 
+
+For example it isn't possible to inspect the expected type of the destination property in the Model. This is a common landmine, an Objective-C class isn't checked that it is the appropriate class when it is cast so failure will occur away from the source of the error[^assertions-exceptions].
+
+### JSON
+
 ### XML
 
 XML is an interesting serialisation format because it isn’t JSON. It is a format that we all like to chuckle about and mock, but the reality is there are many APIs that still use it for a whole host of reasons. Many of the problems with XML comes from the interfaces and abstractions that we use to extract data out of it, rather than with XML itself. XML is also interesting because over time and for a number of historical[^dom-sax] reasons there are Event and Data based interfaces for extracting data. This has lead to a number of libraries and frameworks from a variety of vendors[^xml-libraries].
 
 If you aren't a crazy person like me you'll probably stick a Webservice in front of whatever else you need to consume and do all the complex data processing on a Server, then spit everything out in a RESTful JSON service that normalizes any intricacies in the original data. In reality this isn't always possible and the Client needs to process data from a variety of sources and Serialization Formats.
 
-### Let's Stub an Interface!
-
-Stubbing a Protocol or Interface is a great way of getting to grips with the problem that you want to Solve. It also helps you to crystallise what is important, what details we can ignore to solve the problem that we want.
-
-In parsing some [purely hypothetical XML](http://www.livedepartureboards.co.uk/ldbws/). I've made a few assumptions:
-
-1. I care about the data contained in Text Nodes.
-3. I need to be able to recursively address Elements within a Tree-like structure.
-4. I need to be able to enumerate Elements of the same name at the same level in the tree.
-5. I don't care about anything else (namespaces, attributes, schemas).
-
-Here's a protocol for fetching data from a Parsable XML Node:
-
-    public protocol XMLParsableType {
-      func parseChildren(childTag: String) -> [Self]
-      func parseText() -> String?
-    }
-
-*"That's It?"*. Yep. Everything else can be composed on top of this minimal protocol. Higher-level interaction can be build on top of these fundementals. We can even explain what an XML Parsable is in one sentence:
-
-> _"An XML Parsable has an ordered collection of Child Parsables and may have associated text"_
-
-Protocols are permitted to have a recusive definition using the `Self` placeholder type. How and where the fetched data is stored is left to the implementing class/struct/enum. Obtaining a child may be implemented by traversing a fully reified data structure, or moving a cursor along a buffer.
-
-### Helper functions
-
-An XML Parsable has an array of children (that can be empty) For example we can define a function that obtains the first child of a given tag:
-
-	public class func parseChild<X: XMLParsableType>(childTags: [String])(xml: X) -> X? 
-
-A function that obtains the first child recursively:
-
-	public class func parseChildren<X: XMLParsableType>(childTags: [String])(xml: X) -> X?
-
-A function that obtains the Text element of a child:
-
-	public class func parseChildText<X: XMLParsableType>(childTag: String)(xml: X) -> String?
-
-The declaration of these functions have some important properties:
-
-1. They consume a Protocol, abstracting away how the XML Parser is implemented. As the Protocol has an associated type requirement it has to be fulfilled with Generics. Composed behaviours don't pollute the Implementation of the Protocol but still augment the behaviour.
-2. The functions are Curried. A Curried function allows us to apply the function's arguments at different times. Each time an argument is applied, a new function is returned that accepts the next argument, or the result of all of the arguments is returned. By doing this we can derive functions that are chainable as they accept the Parsable at a later time.
-3. The functions are pure[^class-methods-free-functions], there is no State consumed or modified, only the parameter are used in the function. The interface can't guarantee that side-effects won't occur but this is something implementors should aim towards.
-4. Every function can fail. The as an XML node may-or-may-not have text and a child of a particular name, failure can occur at any stage. If these functions were used in a correct imperative Parser, the failure case would be handled with conditionals and early return. 
-5. Input values must exist. Swift makes strong guarantees about the existance of values, there's no need to check for the existance of reference types. In an Objective-C implementation this contract can be enforced with a litany of assertions. If the language and compiler can enforce these guarantees we've just had a huge productivity win.
-
-In the next post, I'll talk about how these functions can be applied.
+In the next post, I'll be a crazy person and implement an XML parser in Swift, applying some Functional principles.
 
 [^header-generation]: This can be seen in any imported Frameworks, whether they are provided by the User, a 3rd Party, or Apple. Just CMD+Click on a third party Class in XCode and it will take you to the Class or Method definition.
 [^dom-sax]: I cut my programming teeth on Java. When consuming an XML Document of greater than a MB or so the JVM Heap could get hammered when using a DOM style parser, as all of the elements in the document were read into memory. This could be hugely problematic when intertwined with a Garbage Collector. For this reason the Event-Based Streaming SAX parser could be used instead, the whole document need not be read into memory at the expense of a more troublesome interface. Eventually a compromise was found with the StAX parser, buffering the input document with a Cursorable navigation mechanism.
