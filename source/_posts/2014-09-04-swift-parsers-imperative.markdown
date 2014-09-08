@@ -61,14 +61,14 @@ This is simple and immutable, the Parser forms part of the backend for the User 
 
 ### An Interface to XML
 
-Stubbing a Protocol or Interface is a great way of getting to grips with the problem that you want to Solve. It also helps you to crystallise what is important, what details we can ignore to solve the problem that we want. It also helps when [considering the requirements that were previously laid out]() 
+Stubbing a Protocol or Interface is a great way of getting to grips with the problem that needs to be solved. It also helps to determine what is necessary for to implement, as well as the details that can be ignored to solve the problem at hand. There is also a bunch of [previously laid out requirements to be considered]() 
 
 In parsing this XML[^hypothetical-xml]. I've made a few assumptions:
 
 1. I care about the data contained in Text Nodes.
-3. I need to be able to recursively address Elements within a Tree-like structure.
-4. I need to be able to enumerate Elements of the same name at the same level in the tree.
-5. I don't care about anything else (namespaces, attributes, schemas).
+2. I need to be able to recursively address Elements within a Tree-like structure.
+3. I need to be able to enumerate Elements of the same name at the same level in the tree.
+4. I don't care about anything else (namespaces, attributes, schemas).
 
 With those assumptions in mind, a Protocol for defining how data can be extracted from a Parsable XML Node can be made:
 
@@ -77,17 +77,19 @@ With those assumptions in mind, a Protocol for defining how data can be extracte
       func parseText() -> String?
     }
 
-*"That's It?"*. Yep. Everything else can be composed on top of this minimal protocol. More complex extraction functions can be built on top of these fundementals. By defining a Protocol in this way it will become significantly easier to build an implementation of this Protocol, as we will see in [Part 4](). This leads to a definition of the what this Protocol represents in one sentence:
+*"That's It?"*. Yep. Everything else can be composed on top of this minimal protocol; more complex data extraction functions can be built on top of these fundementals. It's easy to define the responsibility of this Protocol in one sentence:
 
-> _"An XML Parsable has an ordered collection of Child Parsables and may have associated text"_
+> _"An XML Parsable has an ordered collection of Child Parsables and may have an associated String of Text"_
 
-Protocols are permitted to have a recursive definition, using the `Self` placeholder type. How and where the fetched data is stored is left to the implementing class/struct/enum[^lazy-evaluated-functional-programming]. Obtaining a child may be implemented by traversing a fully reified data structure, or moving a cursor along a buffer.
+Protocols are permitted to have a recursive definition, using the `Self` placeholder type. How and where the underlying XML document is stored is left to the implementing class/struct/enum[^lazy-evaluated-functional-programming]. As we will see in [Part 4](), obtaining a child may be implemented by traversing a fully reified data structure, or moving a cursor partially visible representation of the structure.
 
-As well as a representation of the Data, there needs to be a consistent way of defining that a Model can extract out values of The question now becomes how we can best extract values from our XML interface, into our Model classes. The entry point can be defined in terms of a decode protocol that the Model structures should implement[^decoder-protocols]:
+As well as a representation of the Data Serialization itself, there needs to be a consistent way of defining that a Model can extract out values of Data Serialization. The entry point can be defined in terms of a decode protocol[^decoder-protocols] that the Model structures should implement:
 
 	public protocol XMLDecoderType {
 	  class func decode<X: XMLParsableType>(xml: X) -> Result<Self>
 	}
+
+As ```XMLParsableType``` has a ```Self``` requirement, the usage of an ```XMLParsableType``` protocol needs to be [satisfied with Generics](https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/Swift_Programming_Language/Generics.html#//apple_ref/doc/uid/TP40014097-CH26-XID_286).
 
 ### Surfacing Failure
 
@@ -131,26 +133,12 @@ However, there are some patterns that are emerging. Firstly, it looks like extra
 
 Next time, we'll take a Functional approach to these problems and reap the rewards.
 
-[^xmlparser-implementation]: The Implementation for this class is in the [next post in this series]().
-
-[^swiftz-generics-simplification]: I'm lying, I've changed the Generic Parameters from ```VA``` & ```VB``` to ```A``` & ```B```
-
 [^hypothetical-xml]: These assumptions actually hold true for a [webservice to be consumed](http://www.livedepartureboards.co.uk/ldbws/) in an Application I was prototyping. Depending on the Webservice an Application is consuming, there's a great deal of assumptions that can be made to reduce the complexity of an Implementation.
 
-[^lazy-evaluated-functional-programming]: One of the interesting aspects of Haskell is [Lazy Evaluation](http://en.wikipedia.org/wiki/Lazy_evaluation), in particular how it applies to building up a [data structure and then traversing it](http://www.cs.kent.ac.uk/people/staff/dat/miranda/whyfp90.pdf).
+[^lazy-evaluated-functional-programming]: One of the most interesting aspects of Haskell is [Lazy Evaluation](http://en.wikipedia.org/wiki/Lazy_evaluation), in particular how it applies to building up a [data structure and then traversing it](http://www.cs.kent.ac.uk/people/staff/dat/miranda/whyfp90.pdf).
 
-[^breaking-down-bind]: When starting out it can be really helpful to do this, it makes inspecting the types of each of the elements in the chain more visible. You can use Alt+Click on the value name to get XCode to print out the inferred type. Its also a good illustration of the power of type inference.
+[^decoder-protocols]: This is heavily inspired by the [ThoughtBot article on JSON Parsing in Swift](http://robots.thoughtbot.com/efficient-json-in-swift-with-functional-concepts-and-generics). In my Project I have multiple decoder types for JSON, XML and CSV.
 
 [^model-mapping-traditional]: I certainly remember writing this kind of thing by hand, before [Java annotations could be used for Code Generation](http://docs.oracle.com/javase/tutorial/jaxb/intro/).
 
-[^monadic-parser]: The concept of a 'Parser' as a distinct type that implements the 'Monad' Typeclass [does indeed exist in Pure functional language](http://eprints.nottingham.ac.uk/223/1/pearl.pdf).
-
-[^constructor-factory-method]: 'Factory Method' is probably a better term for this since a Constructor is a concept specific to ```init``` methods in Swift. 
-
 [^nested-branching]: It would look [something like this](https://gist.github.com/lawrencelomax/00ea2c00c9b6ca5bb4ab)
-
-[^containers-functors]: ```Optional``` and ```Result``` are examples of Functors and Monads. This [fantastic article](http://adit.io/posts/2013-04-17-functors,_applicatives,_and_monads_in_pictures.html) covers the operators in a visual way.
-
-[^macro-error-handling]: In Objective-C this can be handled with [Macros and Early Return](https://github.com/rentzsch/NSXReturnThrowError), but we can't rewrite/mangle the rules of the language in Swift as we don't have Macros.
-
-[^decoder-protocols]: This is heavily inspired by the ThoughtBot article on JSON Parsing in Swift. In my Project I have multiple decoder types for JSON, XML and CSV.

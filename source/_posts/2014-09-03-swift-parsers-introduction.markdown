@@ -78,19 +78,19 @@ If you aren't a crazy person like me you'll probably stick a Webservice in front
 
 In the next post, I'll be a crazy person and create a simple XML interface in Swift, and extract data out of it in an Imperative style.
 
+[^abstraction-swift-metal]: When performance becomes critical in certain sections, there's a Framework. Accelerate and Metal are both examples of this. I can't see C & C++ going away from iOS development in the next decade.
+
 [^header-generation]: This can be seen in any imported Frameworks, whether they are provided by the User, a 3rd Party, or Apple. Just CMD+Click on a third party Class in Xcode and it will take you to the Class or Method definition.
 
 [^documentation-loc]: This means we'll all write better method documentation right?
 
 [^swift-runtime]: A lot of the malleability of the Objective-C runtime has allowed to be built on top of it in the first place!
 
+[^typing-code-generation]: It is possible with metadata attached to the class as a description of the expected values, or with a good amount of code generation, but this isn't the same thing as being able to know what the Class of an ```@property``` is from the Objective-C runtime.
+
 [^dynamic-typing-assignment]: I think my Pro Strong-Typing-bias is showing.
 
 [^assertions-exceptions]: The contracts of assignment can be a good deal stronger with liberal use of assertions like ```NSParameterAssert```
-
-[^typing-code-generation]: It is possible with metadata attached to the class as a description of the expected values, or with a good amount of code generation, but this isn't the same thing as being able to know what the Class of an ```@property``` is from the Objective-C runtime.
-
-[^abstraction-swift-metal]: When performance becomes critical in certain sections, there's a Framework. Accelerate and Metal are both examples of this. I can't see C & C++ going away from iOS development in the next decade.
 
 [^dom-sax]: This is covered in more detail in the [fourth in this series]().
 
