@@ -6,7 +6,7 @@ comments: true
 categories: 
 ---
 
-In the previous post I've talked about an what the requirements can be for a Serialization Format parser. In this post I'll cover how we'd build a Parser in Swift using some of the familiar Imperative features of Swift, by mapping XML to a Model object.
+In the previous post I talked about some of the possible requirements can be for Parser that extracts data from a  Serialization Format and places it in a Language-Native Model Object. In this post I'll cover how an XML Parser for a Model Object can be built using some of the familiar Imperative features of Swift.
 
 ### Model and XML
 
@@ -42,7 +42,6 @@ Let's define a hypothetical XML that we wish to parse:
 		</facilities>
 	</zoo>
 
-
 The Model includes the parts of the XML that our Application cares about and ignores others:
 
 	public struct Animal {
@@ -58,15 +57,11 @@ The Model includes the parts of the XML that our Application cares about and ign
 	  let animals: [Animal]
 	 }
 
-The question now becomes how we can best extract values from our XML interface, into our Model classes. The entry point can be defined in terms of a decode protocol that the Model structures should implement[^decoder-protocols]:
-
-	public protocol XMLDecoderType {
-	  class func decode<X: XMLParsableType>(xml: X) -> Result<Self>
-	}
+This is simple and immutable, the Parser forms part of the backend for the User Interface to consume. There's no reason for the User Interface to be able to manipulate these Models directly.
 
 ### An Interface to XML
 
-Stubbing a Protocol or Interface is a great way of getting to grips with the problem that you want to Solve. It also helps you to crystallise what is important, what details we can ignore to solve the problem that we want. It also helps when [considering some requirements]() 
+Stubbing a Protocol or Interface is a great way of getting to grips with the problem that you want to Solve. It also helps you to crystallise what is important, what details we can ignore to solve the problem that we want. It also helps when [considering the requirements that were previously laid out]() 
 
 In parsing this XML[^hypothetical-xml]. I've made a few assumptions:
 
@@ -75,18 +70,24 @@ In parsing this XML[^hypothetical-xml]. I've made a few assumptions:
 4. I need to be able to enumerate Elements of the same name at the same level in the tree.
 5. I don't care about anything else (namespaces, attributes, schemas).
 
-Here's a protocol for fetching data from a Parsable XML Node:
+With those assumptions in mind, a Protocol for defining how data can be extracted from a Parsable XML Node can be made:
 
     public protocol XMLParsableType {
       func parseChildren(childTag: String) -> [Self]
       func parseText() -> String?
     }
 
-*"That's It?"*. Yep. Everything else can be composed on top of this minimal protocol. Higher-level interaction can be build on top of these fundementals. By defining a Protocol in this way it will become significantly easier to build an implementation of this Protocol, as we will see in Part 3. We can even explain what an XML Parsable is in one sentence:
+*"That's It?"*. Yep. Everything else can be composed on top of this minimal protocol. More complex extraction functions can be built on top of these fundementals. By defining a Protocol in this way it will become significantly easier to build an implementation of this Protocol, as we will see in [Part 4](). This leads to a definition of the what this Protocol represents in one sentence:
 
 > _"An XML Parsable has an ordered collection of Child Parsables and may have associated text"_
 
 Protocols are permitted to have a recursive definition, using the `Self` placeholder type. How and where the fetched data is stored is left to the implementing class/struct/enum[^lazy-evaluated-functional-programming]. Obtaining a child may be implemented by traversing a fully reified data structure, or moving a cursor along a buffer.
+
+As well as a representation of the Data, there needs to be a consistent way of defining that a Model can extract out values of The question now becomes how we can best extract values from our XML interface, into our Model classes. The entry point can be defined in terms of a decode protocol that the Model structures should implement[^decoder-protocols]:
+
+	public protocol XMLDecoderType {
+	  class func decode<X: XMLParsableType>(xml: X) -> Result<Self>
+	}
 
 ### Surfacing Failure
 
@@ -153,5 +154,3 @@ Next time, we'll take a Functional approach to these problems and reap the rewar
 [^macro-error-handling]: In Objective-C this can be handled with [Macros and Early Return](https://github.com/rentzsch/NSXReturnThrowError), but we can't rewrite/mangle the rules of the language in Swift as we don't have Macros.
 
 [^decoder-protocols]: This is heavily inspired by the ThoughtBot article on JSON Parsing in Swift. In my Project I have multiple decoder types for JSON, XML and CSV.
-
-[^swiftz-lightweight]: Swiftz has a Core library as well as a more full-featured Framework. There's a lot of interesting stuffin the Full library, but just getting started with the Core is a good place to start.

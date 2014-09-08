@@ -32,7 +32,7 @@ An E
 
 The immensely popular Open Source project [libxml2](http://xmlsoft.org) library is a C Framework bundled with iOS and Mac OS X and has no external dependencies. It provides implementations of the DOM, SAX and Reader interfaces so is an ideal candidate for our XML Parser.
 
-```NSXMLParser``` has been part of Cocoa for many years now and would also be suitable, however it isn't as interesting since it only has a ```SAX``` interface. While it is certainly possible to make a ```XMLParserType``` implementation using ```NSXMLParser```, I won't consider it for now.
+NSXMLParser has been part of Cocoa for many years now and would also be suitable, however it isn't as interesting since it only has a ```SAX``` interface. While it is certainly possible to make a ```XMLParserType``` implementation using NSXMLParser, I won't consider it for now.
 
 ### C Structures in Swift
 
