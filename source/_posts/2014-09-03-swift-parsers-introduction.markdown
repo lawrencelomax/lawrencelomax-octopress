@@ -28,7 +28,7 @@ The compiler is now doing a lot more with type inference can be used to increase
 
 Having headers is fantastic from a documentation point of view, but the evils of duplication makes can make them unwieldy as well as informative. Swift leans on Header generation[^header-generation] and access control to automate the process of generating an Interface from the Implementation itself. Implementation details don't need to be leaked and API stubs don't need to be copy-pasted between ```.h``` and ```.m```
 
-The implementation of both State and Behaviour become considerably 'cheaper' to write, re-write and update. Classes require a fraction of the number of characters and lines-of-code to achieve the same results in terms of defining Properties and Methods to their Objective-C bretheren[^documentation-loc]. By making the time taken to write and re-write a Class significantly easier, a great deal of the resistance of decomposing Classes into smaller and more testable Units is removed. The Units become smaller and easier to test, revising code becomes easier as part of a virtuous circle.
+The implementation of both State and Behavior become considerably 'cheaper' to write, re-write and update. Classes require a fraction of the number of characters and lines-of-code to achieve the same results in terms of defining Properties and Methods to their Objective-C brethren[^documentation-loc]. By making the time taken to write and re-write a Class significantly easier, a great deal of the resistance of decomposing Classes into smaller and more testable Units is removed. The Units become smaller and easier to test, revising code becomes easier as part of a virtuous circle.
 
 ### Metaprogramming & Dynamism
 
@@ -54,21 +54,21 @@ I'm defining 'Parsing' to be the process of extracting data from [Data Serializa
 8. Don't let any external state effect the Parsing unless absolutely necessary. Really, don't.
 9. Seriously, don't even think about modifying external state. Being able to make a parser concurrent with the rest of the application makes everybody happy.
 10. It should be easy to Parse serialized data from a variety of sources into the parser. The data may come bundled with the Application, from a HTTP request, or a fixture in a Unit Test.
-11. Write Unit Tests for all of the boundary conditions, so we can be super-certain that our understanding of the serialisation format holds true in the implementation.
+11. Write Unit Tests for all of the boundary conditions, so we can be super-certain that our understanding of the serialization format holds true in the implementation.
 12. If our Unit Tests don't cover all of the possible conditions in the structure of the format and a new condition is discovered, write a test for to ensure as much of the information about the structure of the data has been captured as possible.
-13. Don't make the interface for pulling data out of the Serialization more expansive than necessary. If functionality is required that can be expressed in terms of more fundemental extraction functions, define it as a composition of the more fundemental functions.
+13. Don't make the interface for pulling data out of the Serialization more expansive than necessary. If functionality is required that can be expressed in terms of more fundamental extraction functions, define it as a composition of the more fundamental functions.
 
-This is not an exhastive list of requirements and it has already exhausted you and I. Admittedly, some of these requirements are true of Software Development generally, but it is always worth thinking about.
+This is not an exhaustive list of requirements and it has already exhausted you and I. Admittedly, some of these requirements are true of Software Development generally, but it is always worth thinking about.
 
 In Objective-C, Parsing can be a minefield of typing and branching. I don't think I'd be going out on a limb to say that it is one of the most fragile parts of most codebases. Because of its fragility, if an Objective-C Application has any Unit Tests whatsoever, the Parsing components will have the best coverage. This is a big driving force behind Libraries such as the brilliant [Mantle](https://github.com/mantle/mantle)
 
 Regardless of the awesomeness of an Objective-C library for parsing data, it won't ever be possible to inspect the expected type of the destination property in the Model at runtime and thereby avoid issues with Model Objects having values of the wrong type assigned[^typing-code-generation]. Not only that but Objective-C doesn't fail-fast if an Object assigned an Object of a class differs from the expected class that the assignee Object expects[^dynamic-typing-assignment]. This leads to explosions that occurs far away from the original erroneous assignment[^assertions-exceptions].
 
-However, it would appear that the situation is even worse for Swift. Without much in the way of metaprogramming or some runtime magic it looks like the process of parsing will be incredibly repetitive and labourious.
+However, it would appear that the situation is even worse for Swift. Without much in the way of metaprogramming or some runtime magic it looks like the process of parsing will be incredibly repetitive and laborious.
 
 ### XML
 
-XML is an interesting serialisation format because it isn’t JSON. It's a format that we like to chuckle about and deride because of the complexity, but the reality is there are many APIs that Applications need to connect to that use XML. I think that many of the problems that we have with parsing XML comes from the fact that the abstractions we use to extract data from XML aren't that great. Handling all of the failure points in Parsing is a hard task and that's why we want to automate it with metaprogramming and make it bulletproof with Unit Tests.
+XML is an interesting serialization format because it isn’t JSON. It's a format that we like to chuckle about and deride because of the complexity, but the reality is there are many APIs that Applications need to connect to that use XML. I think that many of the problems that we have with parsing XML comes from the fact that the abstractions we use to extract data from XML aren't that great. Handling all of the failure points in Parsing is a hard task and that's why we want to automate it with metaprogramming and make it bulletproof with Unit Tests.
 
 XML is also format because there is a good amount of variety in the ways that we model an XML document and its content in API[^dom-sax]. Typically JSON is just extracted into the native Array, Dictionary, String & Numeric types of the targeted programming language. XML grew in popularity at a time when system resources like available memory were at much more of a premium than they are today. Constraints like this tend to drive innovation in a few directions, which make the process of parsing a little bit more interesting that pulling values out of a language-native Dictionary object.
 
@@ -78,7 +78,7 @@ If you aren't a crazy person like me you'll probably stick a Webservice in front
 
 In the next post, I'll be a crazy person and create a simple XML interface in Swift, and extract data out of it in an Imperative style.
 
-[^header-generation]: This can be seen in any imported Frameworks, whether they are provided by the User, a 3rd Party, or Apple. Just CMD+Click on a third party Class in XCode and it will take you to the Class or Method definition.
+[^header-generation]: This can be seen in any imported Frameworks, whether they are provided by the User, a 3rd Party, or Apple. Just CMD+Click on a third party Class in Xcode and it will take you to the Class or Method definition.
 
 [^documentation-loc]: This means we'll all write better method documentation right?
 
@@ -88,7 +88,7 @@ In the next post, I'll be a crazy person and create a simple XML interface in Sw
 
 [^assertions-exceptions]: The contracts of assignment can be a good deal stronger with liberal use of assertions like ```NSParameterAssert```
 
-[^typing-code-generation]: It is possible with metadata attatched to the class as a description of the expected values, or with a good amount of code generation, but this isn't the same thing as being able to know what the Class of an ```@property``` is from the Objective-C runtime.
+[^typing-code-generation]: It is possible with metadata attached to the class as a description of the expected values, or with a good amount of code generation, but this isn't the same thing as being able to know what the Class of an ```@property``` is from the Objective-C runtime.
 
 [^abstraction-swift-metal]: When performance becomes critical in certain sections, there's a Framework. Accelerate and Metal are both examples of this. I can't see C & C++ going away from iOS development in the next decade.
 
