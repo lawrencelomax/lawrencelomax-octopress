@@ -6,7 +6,7 @@ comments: true
 categories: 
 ---
 
-In the first post in this series I mentioned that there are myriad libraries and interfaces for parsing an XML document. I'm going to use the immensely popular [libxml2]() library. It is a C Framework bundled iOS and Mac OS X with no external dependencies. 
+In the previous posts in this series the Parsers have used a hypothetical ```XMLParserType``` Protocol for fetching data from an XML Element. I previously mentioned that there are myriad libraries and methods for parsing an XML document. In this post I'm going to consider how you would implement such an interface.
 
 ## [Why Lisa Why?](http://www.youtube.com/watch?v=pjc4ZPTX1XQ)
 
@@ -28,17 +28,15 @@ An E
 
 ## Reader
 
-### Working with Swift
+## libxml2
 
-I like to follow a principle when developing software:
+The immensely popular Open Source project [libxml2](http://xmlsoft.org) library is a C Framework bundled with iOS and Mac OS X and has no external dependencies. It provides implementations of the DOM, SAX and Reader interfaces so is an ideal candidate for our XML Parser.
 
-> _"Get to the highest level of Abstraction that makes sense, as early as possible. If the abstraction has too much of a performance impact, worry about that later"_
+```NSXMLParser``` has been part of Cocoa for many years now and would also be suitable, however it isn't as interesting since it only has a ```SAX``` interface. While it is certainly possible to make a ```XMLParserType``` implementation using ```NSXMLParser```, I won't consider it for now.
 
-Not only does this lead to better architecture, it also makes easier to understand units of work.
+### C Structures in Swift
 
-### C Structure Access
-
-libxml2 is a C library, the C functions can be imported into Swift using an Bridging Header. Working with the structures requires quite a bit of unwrapping and manupilating 'Unsafe' containers that wrap all C structures in Swift. Again, a strong reason to move up to the Swift level of abstraction.
+As ```libxml2``` is a C library, the C functions can be imported into Swift using an Bridging Header. Working with the structures requires quite a bit of unwrapping and manupilating 'Unsafe' containers that wrap all C structures in Swift. Again, a strong reason to move up to the Swift level of abstraction.
 
 Direct access of C structure members is not permitted in Swift as Swift does not know about the shape of structures. Any access of structure members will need to be wrapped in C/Objective-C functions and imported in the Bridging Header.
 
@@ -58,7 +56,11 @@ For example, this function will extract the `content` member from a Node:
 
 ### GOTO Swift
 
-Skip Objective-C and use elements of the Swift Standard Library to consume data. Swift provides us with some abstractions that are superior to the Objective-C equivalents, there's no need for an intermediate stage unless it is needed.
+I like to follow a principle when developing software, regardless of the language:
+
+> _"Get to the highest level of Abstraction that makes sense, as early as possible. Don't think about the overhead of the abstration until you can prove that it is detrimental to performance"_
+
+```libxml2``` sits very far down the ladder of Abstraction, when working with it in Swift best practice will be pull data out of C structures and into Swift native ones as early as possible. This means skipping Objective-C[^string-nsstring] and using elements of the Swift Standard Library to consume data. Swift provides us with some abstractions that are superior to the Objective-C equivalents, there's no need for an intermediate stage unless it is needed.
 
 Conveniently, XCode will parse headers with enumerations declared with the ```NS_ENUM``` macro:
 
@@ -114,11 +116,11 @@ Swift provides the ```SequenceType``` and ```GeneratorType``` protocols to allow
 		return SequenceOf(generator)
 	}
 
-Moving enumeration to these interfaces totally removes the need for consumers of this function to know how the list of Child nodes is navigated.
+By moving enumeration to a ```Sequence``` type, consumers of the DOM don't need to be concerned with how the list of Child Node is navigated.
 
 ## Attempt 1: Build a Swift Data Structure
 
-In our first attempt, we will convert the tree in ```libxml``` into a Data Structure in Swift. The Tree of Nodes can implement the previously defined ```XMLParsableType```.
+The first thing that springs to mind is that we allready have a Data Structure in ```libxml``` and we can extract it out to a pure Swift data structure[^class-vs-struct]. This tree of Swift structures can trivially implement the previously defined ```XMLParsableType```.
 
 	public final class XMLNode: XMLParsableType {
 	  public let name: String
@@ -142,7 +144,7 @@ In our first attempt, we will convert the tree in ```libxml``` into a Data Struc
 	  }
 	}
 
-Leaning on the ```childrenOfNode``` function that yeilds a ```Sequence`` and a number of other wrapper functions that return Swift types, building of this tree becomes a simple recusive function:
+The ```childrenOfNode``` function is placed in the ```LibXMLDOM``` class for separating the concerns of how the Tree is exposed and how it is navigated. By using this function that returns a  ```Sequence`` and a number of other wrapper functions (prefixed with ```LibXMLDOM```) returning Swift types, the construction of the tree can be defined recusively:
 
 	private class func createTreeRecursive(node: xmlNodePtr) -> XMLNode {
 	    let name: String! = LibXMLDOMGetName(node)
@@ -164,20 +166,82 @@ Leaning on the ```childrenOfNode``` function that yeilds a ```Sequence`` and a n
 	    return XMLNode(name: name, text: text, children: children)
 	}
 
+That's pretty much it, there's a little more in terms of plumbing and error handling, but its not too hard to take an XML Document from ```libxml2``` and get the data into Swift.
 
 ## Attempt 2: Wrap the libxml Tree
 
+The Building of the tree as a fully realized structure is a Simple implementation, but it certainly isn't the least resource intensive. Swift ```String```s for the Text and Element Name of an XML Element are created regardless of whether they are used or not.
+
+There's no reason that we can't just wrap the whole ```libxml2``` Tree structure in a Class implementing ```XMLParsableType``` that knows how to fetch the Text and Children of an Element.
+
+	public final class LibXMLNavigatingParserDOM: XMLNavigatingParserType, XMLParsableType {
+	  private let node: xmlNodePtr
+	  private let context: LibXMLDOM.Context?
+	  
+	  internal init (node: xmlNodePtr) {
+	    self.node = node
+	  }
+	  
+	  internal init (context: LibXMLDOM.Context) {
+	    self.context = context
+	    self.node = context.rootNode
+	  }
+	  
+	  deinit {
+	    self.context?.dispose()
+	  }
+	  
+	  public func parseChildren(childTag: String) -> [LibXMLNavigatingParserDOM] {
+	    let foundChildren = filter(LibXMLDOM.childrenOfNode(self.node)) { node in
+	      LibXMLDOMGetElementType(node) == LibXMLElementType.ELEMENT_NODE && LibXMLDOMElementNameEquals(node, childTag)
+	    }
+	    return foundChildren.map { LibXMLNavigatingParserDOM(node: $0) }
+	  }
+	  
+	  public func parseText() -> String? {
+	    let foundChild = findSeq(LibXMLDOM.childrenOfNode(self.node)) { node in
+	      return LibXMLDOMGetElementType(node) == LibXMLElementType.TEXT_NODE
+	    }
+	    return foundChild >>- LibXMLDOMGetText
+	  }  
+	}
+
+The ```LibXMLDOM.Context``` is just a internal class responsible for cleaning up the manual-memory-managed ```libxml2``` structures on deallocation:
+
+	internal final class LibXMLDOM {
+	  struct Context {
+	    let document: xmlDocPtr
+	    let rootNode: xmlNodePtr
+    
+	    init (document: xmlDocPtr, rootNode: xmlNodePtr){
+	      self.document = document
+	      self.rootNode = rootNode
+	    }
+    
+	    func dispose() {
+		   if self.rootNode != nil {
+        	xmlFreeDoc(self.document)
+      	   }
+	    }
+	  }
+	}
+
+Again, that's about all we need to implement the ```XMLParsableType``` interface. The creation of the Swift Strings for the Text of an Element are deferred until they are actually needed. If nearly all of the Text Elements are consumed when mapping to a model it won't have much (if any) impact on performance relative to the first attempt.
+
 ## Attempt 3: Navigate with a Reader
+
+Our restricted representation of what XML can be is based purely on the need to access Text Nodes within a Tree. Depending on what we are ignoring in the XML Document, the parser could potentially read a large number of Attributes and ignored Elements into memory that never need to be pulled out.
+
+The DOM parser for ```libxml2``` will have parsed the whole document, elements, attributes and all by the time it is created. Depending on the how much of the document is ignored, we may get significant performance benefit. This will also prove that the cost for parsing an XML document is heavily influenced by the XML Parser costs themselves, not the ```XMLParseableType``` abstraction itself and any composition on top.
 
 ## Testing
 
 One of the great aspects of building an XML Parser in this way is that the Implementations are trivial to swap out and can be tested against for correctness against the same Parsing Code. Additionally, we can use the new Performance Testing features of XCode 6 to see what the performance is like for these varying methods.
  
-
 [^dom-performance]: I cut my programming teeth on Java. When consuming an XML Document of greater than a MB or so the JVM Heap could get hammered when using a DOM style parser. This could be hugely problematic when intertwined with a Garbage Collector. I wonder if the ubiquity of JSON Parsers that output to a fully reified Data Structure, rather than Event Based parsers has anything to do with the increased availability of resources since JSON came into vogue.
 
-
- For this reason the Event-Based Streaming SAX parser could be used instead, the whole document need not be read into memory at the expense of a more troublesome interface. Eventually a compromise was found with the StAX parser, buffering the input document with a Cursorable navigation mechanism.
+For this reason the Event-Based Streaming SAX parser could be used instead, the whole document need not be read into memory at the expense of a more troublesome interface. Eventually a compromise was found with the StAX parser, buffering the input document with a Cursorable navigation mechanism.
  
+[^class-vs-struct]: This is the perfect candidate for usage of a ```struct``` instead of a ```class```. We don't need for this to be subclassed, or any disposal semantics in ```dealloc```. Reference counting is totally uncessary as this structure represents an Immutable value. I'd love to take a look at the performance of passing structs around, [it looks like Array and Dictionary struct types use copy-on-write](https://devforums.apple.com/message/990361#990361) but I have no idea if this applies to User defined structs. 
 
-
+[^string-nsstring]: Ok I lied, there I use a lot of Bridging functions that use ```NSString```, but an ```NSString``` is instantly converted to a Swift ```String```

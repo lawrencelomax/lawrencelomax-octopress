@@ -8,22 +8,47 @@ categories:
 
 In the previous post we built a XML to Model parser using Imperative tecniques trying to implement some of the robustness requirements from the first post. In this post I'll cover how we can use some of the features of Swift as well as some Functional Programming to create a parser that can map XML to a Model Object.
 
-### Helper Functions
+### Thinking Functionally
 
-Using what we've learned from the Imperative approach we can build a Class of Higher-Level functions for common extraction tasks. We can also build Higher-Level functions that give more information about where failure occurs. Optional Chaining is convenient, but the failure is silent and it will take some poking around to figure out where the failure actually occured in the chained Optional expression.
+I'm using the fantastic and lightweight[^swiftz-lightweight] [Swiftz](https://github.com/maxpow4h/swiftz/) for go-to implementations of many of the Functional primitives. It also has the ```Result``` type the ```XMLParser``` Class uses. 
+
+One important conceptual change to grasp is that functions can be assigned to variables and constants just like values can! Objective-C has had blocks for some time now, assigning a block to a property of a Class is second nature to many Objective-C developers. Swift takes this a step further, a [Closure in Swift](https://developer.apple.com/library/prerelease/mac/documentation/Swift/Conceptual/Swift_Programming_Language/Closures.html) is just a special kind of function! Blocks are no longer the best way of passing around a computation, we can consider the equivalence of functions declared with ```func``` in a Global or Class scope with local Closures:
+
+	let intToNumber:  Int -> NSNumber = NSNumber.numberWithInt
+	let intToNumber1: Int -> NSNumber = { NSNumber.numberWithInt($0) }
+
+By now it should be second nature to think of the concatenation of two Strings using the [+ operator](http://swifter.natecook.com/operator/pls/). As functions are types like any other, two functions can be joined together just like a String.
+
+	func prefixer(prefix: String)(string: String) -> String {
+	  return prefix + string
+	}
+	
+	func postfixer(postfix: String)(bar: String) -> String {
+	  return string + postfix
+	}
+	let happyPrefix = prefixer("😃") // String -> String
+	let sadPostfix = prefixer("😞") // String -> String
+	let infixer = happyPrefix • sadPostfix // String -> String
+	let string = infixer("Good Morning") // "😃 Good Morning 😞"
+
+In this contrived example, the Swiftz compose operator (•) is used in conjunction with [Curried Functions](https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/Swift_Programming_Language/Declarations.html). This might look a little crazy for now, but two important concepts are:
+
+1. A specialized "😃" prefixer function can be created from the curried ```prefixer``` function.
+2. New functions can be created locally by composing other functions with fancy operators.
+
+### Curried Helpers
+
+These princimples can be applied in order to compose specialized parser functions for a particular value in the Model. Decoding the ```Animal``` Model from XML in the [previous post]() requires three parsers.
+
+	 let typeParser: XMLParsableType -> Result<String> = ...
+	 let nameParser: XMLParsableType -> Result<String> = ...
+	 let urlParser: XMLParsableType -> Result<String> = ...
 
 Higher-Level Parser functions can be build on top of ```XMLParsableType``` with a Class of Static functions[^xmlparser-implementation]:
 
 	public final class XMLParser {
-		// Takes an ```XMLParsableType``` and a String and returns an Array of Children with the given Element Name.
-		public class func parseChildren<X: XMLParsableType>(childTag: String)(xml: X) -> Result<[X]>   
-		// Takes an ```XMLParsableType``` and a String and returns the first child with the given Element Name.
 		public class func parseChild<X: XMLParsableType>(childTag: String)(xml: X) -> Result<X> 
-		// Takes an ```XMLParsableType``` and an array of Strings and returns the first child by recursively applying parseChild.
-		public class func parseChild<X: XMLParsableType>(childTags: [String])(xml: X) -> Result<X>
-		// Takes an ```XMLParsableType``` and a String and returns the Text of the Child of the given Element Name.
 		public class func parseChildText<X: XMLParsableType>(childTag: String)(xml: X) -> Result<String>
-		public class func parseChildText<X: XMLParsableType>(childTags: [String])(xml: X) -> Result<String>
 	}
 
 Even if the comments were not present, looking at the types of the arguments and the return value, it should be possible to see what these functions accomplish. There are some important properties of these functions to consider:
@@ -35,16 +60,7 @@ Even if the comments were not present, looking at the types of the arguments and
 5. Input values must exist. Swift makes strong guarantees about the existance of values, there's no need to check for the existance of reference types. In an Objective-C implementation this contract can be enforced with a litany of assertions. If the language and compiler can enforce these guarantees we've just had a huge productivity win.
 6. They are relivately minimal and do not include interpretation of every possible Type. Numeric and complex types within an XML document are represented in textual form. Unlike JSON, there is no explicit syntax for a Numeric value. Instead of bloating this Parser class with every variation of interpreting Text as a Numeric value, the parsing of ```Double```, ```Int```, ```Bool``` and other types can be composed from other functions. This is an important point to understand about Functional Programming.
 
-### Applying Functional Principles
-
-I'm using the fantastic and lightweight[^swiftz-lightweight] [Swiftz](https://github.com/maxpow4h/swiftz/) for go-to implementations of many of the Functional primitives. It also has the ```Result``` type the ```XMLParser``` Class uses. 
-
-One important conceptual change to grasp is that functions can be assigned to variables and constants just like values can! Objective-C has had blocks for some time now, assigning a block to a property of a Class is second nature to many Objective-C developers. Swift takes this a step further, a [Closure in Swift](https://developer.apple.com/library/prerelease/mac/documentation/Swift/Conceptual/Swift_Programming_Language/Closures.html) is just a special kind of function! Blocks are no longer the best way of passing around a computation, we can consider the equivalence of functions declared with ```func``` in a Global or Class scope with local Closures:
-
-	let intToNumber:  Int -> NSNumber = NSNumber.numberWithInt
-	let intToNumber1: Int -> NSNumber = { NSNumber.numberWithInt($0) }
-
-#### Cascading Failure
+### Cascading Failure
 
 We've allready seen that we can use Swift's Optional Chaining in our parser to limit the number of occurences of handling failure. However, the ```Result``` isn't a blessed type in the language with special language syntax for chaining. However, we want idenical behaviour with the ```Result```.
 
@@ -66,9 +82,11 @@ The type of name is ```Result<String>```, just what we want. The function can be
 	let nestedNonsense = XMLParser.parseChild("nested_nonsense")(xml: xml)	// This is a Result<X>
 	let name = nestedNonsense >>- parseName // The Bind operator joins parseName and nestedNonsense together.
 
-The Bind operator requires that the Right-Hand argument is a function matching up with the Generic type on the Left-Hand argument. The ```parseName``` 
+The Bind operator requires that the Right-Hand argument is a function matching up with the Generic type on the Left-Hand argument. The ```parseName```
 
-#### Applicatives
+### Adding Common Operations
+
+### Applicatives
 
 Lets assume that we have the correct code that produces a ```Result``` container for each of values that needs to be extracted from the XML and assigned to the Model. The computation that needs to be performed is _"If all of the Results corresponding to each of the Values are Successful, return our Model with the values applied inside a Result context, otherwise return the first Error Result."
 
@@ -103,7 +121,7 @@ Secondly the ```apply``` operator:
 
 Very similar to ```fmap``` except the function can be in a ```Result``` context too!
 
-#### Function Composition	
+### Function Composition	
 
 So far, the Parsing code we've covered has only been concerned with String values. This is of course very simple as our XML interface exposes Strings. However, our Model is concerned with other types; ```Bool```, ```Double```, ```Int```, ```CLLocationCoordinate2D```. Additionally, the Models form a heirarchy, with a number of ```Animal``` structures belonging to a ```Zoo```. It can't be assumed that all of the types are Strings.
 
@@ -136,7 +154,7 @@ The previous ```toiletCountBoolParser``` can be re-written without a closure, an
 	let toiletCount =  XMLParser.parseChildText(["facilities", "toilet"])(xml: xml) >>- toiletCountBoolParser
 
 
-#### The Benefits
+### The Benefits
 
 There's a lot to take in here, some of the benefits should be clear, others are a bit more subtle.
 

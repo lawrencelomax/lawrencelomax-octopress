@@ -61,15 +61,15 @@ There's a lot going on and this would require a substantial effort in an Imperat
 
 For example it isn't possible to inspect the expected type of the destination property in the Model. This is a common landmine, an Objective-C class isn't checked that it is the appropriate class when it is cast so failure will occur away from the source of the error[^assertions-exceptions].
 
-### JSON
-
 ### XML
 
 XML is an interesting serialisation format because it isn’t JSON. It is a format that we all like to chuckle about and mock, but the reality is there are many APIs that still use it for a whole host of reasons. Many of the problems with XML comes from the interfaces and abstractions that we use to extract data out of it, rather than with XML itself. XML is also interesting because over time and for a number of historical[^dom-sax] reasons there are Event and Data based interfaces for extracting data. This has lead to a number of libraries and frameworks from a variety of vendors[^xml-libraries].
 
 If you aren't a crazy person like me you'll probably stick a Webservice in front of whatever else you need to consume and do all the complex data processing on a Server, then spit everything out in a RESTful JSON service that normalizes any intricacies in the original data. In reality this isn't always possible and the Client needs to process data from a variety of sources and Serialization Formats.
 
-In the next post, I'll be a crazy person and implement an XML parser in Swift, applying some Functional principles.
+### Next Time...
+
+In the next post, I'll be a crazy person and create a simple XML interface in Swift, and extract data out of it in an Imperative style.
 
 [^header-generation]: This can be seen in any imported Frameworks, whether they are provided by the User, a 3rd Party, or Apple. Just CMD+Click on a third party Class in XCode and it will take you to the Class or Method definition.
 [^dom-sax]: I cut my programming teeth on Java. When consuming an XML Document of greater than a MB or so the JVM Heap could get hammered when using a DOM style parser, as all of the elements in the document were read into memory. This could be hugely problematic when intertwined with a Garbage Collector. For this reason the Event-Based Streaming SAX parser could be used instead, the whole document need not be read into memory at the expense of a more troublesome interface. Eventually a compromise was found with the StAX parser, buffering the input document with a Cursorable navigation mechanism.
