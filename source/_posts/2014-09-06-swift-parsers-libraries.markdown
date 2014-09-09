@@ -3,7 +3,14 @@ layout: post
 title: "Swift Parsers - Libraries"
 date: 2014-09-06 15:00:00 +0100
 comments: true
-categories: 
+published: false
+categories:
+- Functional
+- Swift
+- iOS
+- Objective-C
+- Parsers
+- Backends
 ---
 
 In the previous posts in this series the Parsers have used a hypothetical ```XMLParserType``` Protocol for fetching data from an XML Element. I previously mentioned that there are myriad libraries and methods for parsing an XML document. In this post I'm going to consider how you would implement such an interface.

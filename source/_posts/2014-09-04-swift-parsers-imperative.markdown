@@ -3,7 +3,14 @@ layout: post
 title: "Swift Parsers - Imperative"
 date: 2014-09-04 15:00:00 +0100
 comments: true
-categories: 
+published: false
+categories:
+- Functional
+- Swift
+- iOS
+- Objective-C
+- Parsers
+- Backends
 ---
 
 In the previous post I talked about some of the possible requirements can be for Parser that extracts data from a  Serialization Format and places it in a Language-Native Model Object. In this post I'll cover how an XML Parser for a Model Object can be built using some of the familiar Imperative features of Swift.

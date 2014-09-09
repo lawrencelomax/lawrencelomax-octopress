@@ -3,7 +3,14 @@ layout: post
 title: "Swift Parsers - Functional"
 date: 2014-09-05 15:00:00 +0100
 comments: true
-categories: 
+published: false
+categories:
+- Functional
+- Swift
+- iOS
+- Objective-C
+- Parsers
+- Backends
 ---
 
 In the [previous post]() we built a ```decode``` function to parse data out from XML and into an ```Animal``` Model using Imperative techniques. This required some efforts in order to satisfy some of the robustness requirements from the [first post]().
@@ -151,17 +158,19 @@ Or we can use the [```Compose``` and ```Bind``` Operators again]():
 	let toiletCountParser: String -> Result<Int> = promoteDecodeError("Could not parse 'disabled_parking") • Int.parseString
 	let toiletCount =  XMLParser.parseChildText(["facilities", "toilet"])(xml: xml) >>- toiletCountParser
 
-The code also has the benefit of using the ```XMLDecoderType``` protocol as the ```decode``` functions can be reused when the Models form a heirarchy. In this case there are a number of ```Animal``` Models belonging to a ```Zoo```:
+The ```Animal``` and ```Zoo``` Models both implement the ```XMLDecoderType``` protocol. In this case there are a number of ```Animal``` Models belonging to a ```Zoo```, so the ```decode``` functions can be reused to extract out each of the ```Animal``` Models contained in a parent ```Zoo```:
 
 	let animals = XMLParser.parseChild("animals")(xml: xml) >>- XMLParser.parseChildren("animal") >>- resultMap(Animal.decode)
 
-The ```resultMap``` function is like a regular ```map``` on an Array, except with the return of a ```Result.Error``` if any of the applications of the ```map``` function fail:
+The ```resultMap``` function is like a regular ```map``` on an ```Array```, except with the return of a ```Result.Error``` if any of the applications of the ```map``` function fail:
 
 	public func resultMap<A, B>(map: A -> Result<B>)(array: [A]) -> Result<[B]>
 
 ### Applicatives
 
-Lets assume that we have the correct code that produces a ```Result``` container for each of values that needs to be extracted from the XML and assigned to the Model. The computation that needs to be performed is _"If all of the Results corresponding to each of the Values are Successful, return our Model with the values applied inside a Result context, otherwise return the first Error Result."
+Now we have everything we need to build an implementation that produces ```Result``` containers for each of the values that need to be extracted from the XML and assigned to the Model. The computation that needs to be performed is:
+
+> _"If all of the ```Result```s corresponding to each of the Values are Successful, return our Model with the Values from the Result context applied to the Model Constructor function, otherwise just return the first Errored Result."_
 
 This computation can be performed by Currying the Constructor for the Model and then applying each Result in order. A Curried 'Constructor'[^constructor-factory-method] for the ```Animal``` Model looks like this:
 
