@@ -89,30 +89,32 @@ As well as a representation of the Data Serialization itself, there needs to be 
 	  class func decode<X: XMLParsableType>(xml: X) -> Result<Self>
 	}
 
-As ```XMLParsableType``` has a ```Self``` requirement, the usage of an ```XMLParsableType``` protocol needs to be [satisfied with Generics](https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/Swift_Programming_Language/Generics.html#//apple_ref/doc/uid/TP40014097-CH26-XID_286).
+This function will be where the action is and can be implemented in the Model type defintions themselves or separately as Extensions. As ```XMLParsableType``` has a ```Self``` requirement, the usage of an ```XMLParsableType``` protocol needs to be [satisfied with Generics](https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/Swift_Programming_Language/Generics.html#//apple_ref/doc/uid/TP40014097-CH26-XID_286).
 
 ### Surfacing Failure
 
-In the interface for ```XMLParsableType``` failure is indicated with the an Optional return type. We can use the ``Result`` type as it availability semantics that are similar to an ```Optional```, with additional information provided with an ```NSError``` in the failure case:
+In the interface for ```XMLParsableType```, failure is indicated with the return of [the ```None``` case of the ```Optional``` enum](https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/Swift_Programming_Language/TheBasics.html#//apple_ref/doc/uid/TP40014097-CH5-XID_483). An ```Optional``` surrounds the value with a [Context describing the availability of the value](http://adit.io/posts/2013-04-17-functors,_applicatives,_and_monads_in_pictures.html). The absence of a value in a ```XMLParsableType``` indicates some kind of failure, but without any information about how the Error arised.
+
+Some Cocoa APIs use ```nil``` as the return value represent failure[^nil-vs-none] alone, but idiomatic Cocoa will also include a byreference ```NSError``` to return Error Information in the event of failure. Exceptions are being [weeded out of Cocoa API](https://twitter.com/atnan/status/506832064633901056) for all but programmer error. ```NSError``` has the an associated ["Error Domain"](https://developer.apple.com/library/mac/documentation/Cocoa/Reference/Foundation/Classes/NSError_Class/Reference/Reference.html#//apple_ref/occ/instm/NSError/domain) as well as [```String``` Description](https://developer.apple.com/library/mac/documentation/Cocoa/Reference/Foundation/Classes/NSError_Class/Reference/Reference.html#//apple_ref/doc/uid/20001704-CJBIAHGF) of the cause of the failure. This can be massively helpful as finding the code or resource that is responsible is a nightmare if the only information is "a problem occured somewhere". For example the ```NSJSONSerialization``` API will give the line-number of a syntax error in a JSON resource.
+
+Moving to a Safe Swift world, return of an ```NSError``` and a possible value can be encapsulated in the same value using an [Enumeration with Associated Values](https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/Swift_Programming_Language/Enumerations.html#//apple_ref/doc/uid/TP40014097-CH12-XID_227), rather [dereferencing pointers](https://www.google.co.uk/search?client=safari&rls=en&q=nserror+dereference+pointer&ie=UTF-8&oe=UTF-8&gfe_rd=cr&ei=3MEOVNesH4G28AOjw4D4Bw#rls=en&q=nserror+dereference+pointer). This is the ``Result`` with the same availability semantics as an ```Optional```, with additional failure information provided with an ```NSError``` in the failure case:
 
 	public enum Result<V> {
 	  case Error(NSError)
 	  case Value(Box<V>)
 	}
-	
-```NSError``` has the an associated of an "Error Domain" as well as ```String``` Description of the cause of the failure. ```NSError``` passed by reference is also ubiquitous and idiomatic in Cocoa and plays nicely with the ```Result``` type. Exceptions are being [weeded out of Cocoa API](https://twitter.com/atnan/status/506832064633901056) for all but programmer error.
 
-Because constructing an ```Result``` from an ```Optional``` is a repetitive task in our ```Decoder``` it is worth writing a helper function to 'promote' an ```Optional``` to a ```Result``` with a default Error Domain:
+As there are potentially many sources of failure in the ```decode``` method, it is handy to write a Helper Method that can "promote" an ```Optional``` to a ```Result``` with an Error if the Optional does not contain a value. This will populate the ```NSError``` with a default Error Domain and attatch a User Defined message:
 
 	public func promoteDecodeError<V>(message: String)(value: V?) -> Result<V>
 
 ### An Imperative Approach
 
-From the previous post, I discussed how the lack of a dynamic runtime in Swift will prevent us from using some of the programming techniques of Objective-C. So we will have to take a more traditional approach to parsing that will look a lot more like the techniques we may have used when we first learned programming[^model-mapping-traditional]. 
+From the previous post, I discussed how the lack of a dynamic runtime in Swift will mean that bringing over some Objective-C programming techniques will be impossible. As a Swift Parser won't be able to use these techniques, a more traditional approach to parsing will have to be used[^model-mapping-traditional]. 
 
-A key requirement of our Parsing code is that it should fail if one of the values is missing in the Serialization Format. The following Imperative approach shows how it may be possible to extract a ```Result<Animal>``` from an ```XMLParsableType```:
+The following Imperative approach shows how it may be possible to extract a ```Result<Animal>``` from an ```XMLParsableType```:
 
-	  static func decodeImperative<X: XMLParsableType>(xml: X) -> Result<Animal> {
+	  static func decode<X: XMLParsableType>(xml: X) -> Result<Animal> {
 	    if let type = XMLParser.parseChildText("type")(xml: xml).toOptional() {
 	      if let name = XMLParser.parseChildText("name")(xml: xml).toOptional() {
 	        if let urlString = XMLParser.parseChildText("url")(xml: xml).toOptional() {
@@ -125,15 +127,19 @@ A key requirement of our Parsing code is that it should fail if one of the value
 	    return Result.Error(decodeError("Could not parse 'type' as a String"))
 	  }
 
-This doesn't look great. The nesting is terrible, the Failure and Success conditions are separated around the conditional. In this case, there are only three values, a Model with more properties would make the nesting significantly worse. In Objective-C this can be better tackled by returning early on failure, however this would require lots of force unwrapping[^nested-branching].
+This doesn't look great. The nesting is terrible, the Failure and Success conditions are separated around the conditional. In this case, there are only three values, a Model with more properties would make the nesting significantly worse. In Objective-C this can be better tackled by returning early on failure, however this would require lots of force unwrapping[^nested-branching]. Conditional Statements are required as Failure when one of the values is missing is a requirement of our Model and is guaranteed to exist in the XML. 
 
-However, there are some patterns that are emerging. Firstly, it looks like extracting the text of a child is important this can probably be extracted out. Obtaining a grandchild also looks to be something we can extract out. Optional Chaining is being used to avoid further nesting, this looks familiar coming from Objective-C. 
+Despite these problems, there are some patterns are emerging. Firstly, it looks like extracting the Text from a Child is a common enough task that can be converted to a function in its own right. Obtaining a Child's Child's looks like an interesting area for some more meaningul functions. Optional Chaining is being used to avoid further conditionals. 
+
+Most importantly is that the nesting is an Imperative way of implementing that the successful condition for this function is dependent on the availability of three values in the XML. Moving our understanding of the pattern from an Imperative model to a Declaritive model will be crucial to building a better way of constructing a ```decode``` function.
 
 ### Next Time...
 
-Next time, we'll take a Functional approach to these problems and reap the rewards.
+Next time, we'll take a Functional approach to the ```decode``` method, allowing us to think at a much higher level about how a Model is built.
 
 [^hypothetical-xml]: These assumptions actually hold true for a [webservice to be consumed](http://www.livedepartureboards.co.uk/ldbws/) in an Application I was prototyping. Depending on the Webservice an Application is consuming, there's a great deal of assumptions that can be made to reduce the complexity of an Implementation.
+
+[^nil-vs-none]: It is really important to understand the semantic differences between ```nil``` in Objective-C and ```None```/```nil``` in Objective-C. With Swift/Objective-C interoperability they are used interchangably. In Swift they can be thought of as "the absence of a value", but in Objective-C they can be both "the absence of a value" and a [terminal](http://en.wikipedia.org/wiki/Null-terminated_string). Swift features [Optional Chaining](https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/Swift_Programming_Language/OptionalChaining.html#//apple_ref/doc/uid/TP40014097-CH21-XID_356) to replicate the nil-messaging of Objective-C. As Objective-C APIs cannot make guarantees about the availability of a Reference Type all of the Objective-C bridged APIs, [Reference Types are exposed as Optionals & Force-Unwrapped Optionals](ceptual/BuildingCocoaApps/InteractingWithObjective-CAPIs.html#//apple_ref/doc/uid/TP40014216-CH4-XID_30).
 
 [^lazy-evaluated-functional-programming]: One of the most interesting aspects of Haskell is [Lazy Evaluation](http://en.wikipedia.org/wiki/Lazy_evaluation), in particular how it applies to building up a [data structure and then traversing it](http://www.cs.kent.ac.uk/people/staff/dat/miranda/whyfp90.pdf).
 

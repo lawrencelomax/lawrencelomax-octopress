@@ -78,7 +78,7 @@ If you aren't a crazy person like me you'll probably stick a Webservice in front
 
 In the next post, I'll be a crazy person and create a simple XML interface in Swift, and extract data out of it in an Imperative style.
 
-[^abstraction-swift-metal]: When performance becomes critical in certain sections, there's a Framework. Accelerate and Metal are both examples of this. I can't see C & C++ going away from iOS development in the next decade.
+[^abstraction-swift-metal]: The inevitable is happening in iOS Land; Higher Levels of Abstraction as device performance increases, Frameworks and specialized languages for performance critical code. On iOS this is the availability of Accelerate and Metal. The amount of C & C++ in iOS Development may diminish, but I don't see it going away within the next decade.
 
 [^header-generation]: This can be seen in any imported Frameworks, whether they are provided by the User, a 3rd Party, or Apple. Just CMD+Click on a third party Class in Xcode and it will take you to the Class or Method definition.
 
@@ -86,12 +86,12 @@ In the next post, I'll be a crazy person and create a simple XML interface in Sw
 
 [^swift-runtime]: A lot of the malleability of the Objective-C runtime has allowed to be built on top of it in the first place!
 
-[^typing-code-generation]: It is possible with metadata attached to the class as a description of the expected values, or with a good amount of code generation, but this isn't the same thing as being able to know what the Class of an ```@property``` is from the Objective-C runtime.
+[^typing-code-generation]: It is possible to do this by attatching data about Classes of the properties of a Class, manually or automatically (this is part of the role of [NSManagedObjectModel](https://developer.apple.com/library/mac/documentation/Cocoa/reference/CoreDataFramework/Classes/nsManagedobjectModel_Class/Reference/Reference.html)). However, this isn't the same thing as being able to know what the Class of an ```@property``` is from the Objective-C runtime.
 
-[^dynamic-typing-assignment]: I think my Pro Strong-Typing-bias is showing.
+[^dynamic-typing-assignment]: I think my Pro Strong-Typing-bias is showing. I'm just describing one of the disadvantages of a weak type system, when there are also benefits.
 
-[^assertions-exceptions]: The contracts of assignment can be a good deal stronger with liberal use of assertions like ```NSParameterAssert```
+[^assertions-exceptions]: The contracts of assignment can be a good deal stronger with liberal use of assertions like ```NSParameterAssert```.
 
 [^dom-sax]: This is covered in more detail in the [fourth in this series]().
 
-[^server-processing]: You'll also have your pick of languages on the server, so you can use a language & framework that works well in this domain. Either way the Client App will have to consume data at some point and the App shouldn't fall over if there's a hiccup on the server.
+[^server-processing]: You'll also have your pick of languages on the server, so you can use a language & framework that works well in this domain. Either way the Client App will have to consume data at some point and the App should be fault-tolerant enough that it doesn't fall over if there's a hiccup on the server.
