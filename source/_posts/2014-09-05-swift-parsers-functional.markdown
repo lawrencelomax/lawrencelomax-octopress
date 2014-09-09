@@ -3,7 +3,7 @@ layout: post
 title: "Swift Parsers - Functional"
 date: 2014-09-05 15:00:00 +0100
 comments: true
-published: false
+published: true
 categories:
 - Functional
 - Swift
@@ -162,64 +162,73 @@ The ```Animal``` and ```Zoo``` Models both implement the ```XMLDecoderType``` pr
 
 	let animals = XMLParser.parseChild("animals")(xml: xml) >>- XMLParser.parseChildren("animal") >>- resultMap(Animal.decode)
 
-The ```resultMap``` function is like a regular ```map``` on an ```Array```, except with the return of a ```Result.Error``` if any of the applications of the ```map``` function fail:
+There is another function that takes the output of ```XMLParser.parseChildren``` as an input, of type ```Result<[X]>```. The ```resultMap``` function is like a regular ```map``` on an ```Array```, except with the return of a ```Result.Error``` if any of the applications of the ```map``` function fails:
 
 	public func resultMap<A, B>(map: A -> Result<B>)(array: [A]) -> Result<[B]>
 
 ### Applicatives
 
-Now we have everything we need to build an implementation that produces ```Result``` containers for each of the values that need to be extracted from the XML and assigned to the Model. The computation that needs to be performed is:
+Now we have everything we need to extract values out of ```XMLParsableType``` and into ```Result``` containers for each of the values that need to be extracted. Now the ```Result``` values need to be chained in the following way:
 
 > _"If all of the ```Result```s corresponding to each of the Values are Successful, return our Model with the Values from the Result context applied to the Model Constructor function, otherwise just return the first Errored Result."_
 
-This computation can be performed by Currying the Constructor for the Model and then applying each Result in order. A Curried 'Constructor'[^constructor-factory-method] for the ```Animal``` Model looks like this:
+Let's turn back to Curried Functions, this time to a Curried 'Constructor'[^constructor-factory-method]:
 
     static func build(type: String)(name: String)(url: NSURL) -> Animal {
       return self(type: type, name: name, url: url)
     }
 
-Given that we have the previous ```Result```s corresponding to each of the parameters the computation can be broken down:
+By adding a little more context to each of the applications of Higher-Order functions, we should be able to follow what is going on as the ```Animal.build``` function down to a ```Result<Animal>```:
 
-    let type: Result<String> = ...
+    // These are previously defined using Higher-Order functions and XMLParser
+	let type: Result<String> = ...
     let name: Result<String> = ...
     let url: Result<NSURL> = ...
     
+	// The Build Function is a Curried function that will yeild functions with every application until we have the Animal value.
 	let build: String -> String -> NSURL -> Animal = self.build
+	// Each of these stage gets the Animal structure closer to being initialized
     let first: Result<String -> NSURL -> Animal> = self.build <^> type
     let second: Result<NSURL -> Animal> = first <*> name
     let third: Result<Animal> = second <*> url
 
-It should be a little clearer what is going on given the additional annotations for each value, these defintions should probably be removed if the compiler can infer them. There are some additional infix operators doing the heavy lifting of pulling values out of the ```Result``` context and sticking them back in again.
+This feels a lot like solving a Mathmatical equation by reducing the variables to balance each side of the equation. There are a few more Higer-Order functions that are being used here, doing the heavy lifting of pulling values and functions out of a ```Result``` context executing a function and then sticking the return value back in a ```Result``` again.
 
-Firstly, the ```fmap``` operator:
+Firstly, the [```fmap``` operator](https://github.com/maxpow4h/swiftz/blob/master/swiftz_core/swiftz_core/Result.swift#L83):
 
 	public func <^><A, B>(f: A -> B, a: Result<A>) -> Result<B>
 
-This function is used to apply a function to a the value contained in the ```Result``` context. The function itself doesn't ever have to be aware of the ```Result``` context with the implementation of ```<^>``` being based on what the ```Result``` context represents.
+It can be thought of in the following way:
 
-Secondly the ```apply``` operator:
+> _"If the Result *a* is an Value apply the function *f* and place the result back in a Result, if the Result *a* is an Error, just return the Result immediately"_
+
+The property of this operator is that the applied function ```f``` doesn't have to ever have to be aware that the applied argument has been part of a ```Result``` context.
+
+Secondly, we can take a look the [```apply``` operator](https://github.com/maxpow4h/swiftz/blob/master/swiftz_core/swiftz_core/Result.swift#L94):
 
 	public func <*><A, B>(f: Result<A -> B>, a: Result<A>) -> Result<B>
 
-This is another variation in the types of arguments that are accepted. Following the application of each of these operators in sequence, it becomes like balancing an equation; applying an argument to a curried function knocks one of the arguments off.
+It too can be described:
 
-Between ```<^>```, ```<*>``` and ```>>-``` all the combinations of applying Values to Functions inside and outside of a ```Result``` are covered. These instruments for moving data around inside the ```Result``` context also apply to other context types[^monads-as-contexts].
+>  _"If the Result *f* is an Error just return it immediately, if the Result *a* is an Error just return it immediately. Otherwise pull the function out of *f* and the value out of *a*, apply *a* to *f* then place the returned value in a Result"_
+
+Again, these functions themseves no longer need to be aware that values are contained in a ```Result``` context. 
+
+Between ```<^>```, ```<*>``` and ```>>-``` all the combinations of applying Values to Functions inside and outside of a ```Result``` are covered. These Operators allow us to use pull values and functions into-and-out-of ```Result``` contexts, using functions that don't have to be aware of the fact that the values and Functions may have come out of a ```Result```[^monads-as-contexts].
 
 ### Teach the Controversy
 
-There's a lot to take in here, some of the benefits should be clear, others are a bit more subtle. I don't deny some of this doesn't have a cost in terms of a leaning curve, it can look very alien at first. However, this isn't less true of a [Domain Specific Language](https://developer.apple.com/library/ios/documentation/UserExperience/Conceptual/AutolayoutPG/VisualFormatLanguage/VisualFormatLanguage.html) that we can graft on top of Objective-C[^objc-dsls] or with a [more flexible language](http://robots.thoughtbot.com/writing-a-domain-specific-language-in-ruby). The result on the code can be summed up as:
+There's a lot to take in, some of the benefits should be clear, others are a bit more subtle. I don't deny some of this doesn't have a steep learning curve, it may go against many years of experience with languages that don't have semantics for dealing with Functions as things that can be combined in these ways. All of these concepts and implementations are nothing new and are the products of high-shouldered giants. With the modernity of Swift we have the opportunity to incorporate more Functional Programming into Native iOS and Mac Developments. Given that there are certain programming techniques that can't be carried over from Objective-C, its worth considering incorporating some Functional Programming if it fits the task at hand.
 
-> _"In the Imperative implementation Parsing computations are chained with conditional statements and The effect on the code is the usage of the ```Result``` type and Functional Operators to chain com"_
+There's a lot of concern that Operator Overloading is going to lead to a lot of Smart People doing some very silly things[^blocks-operator-overloading] for the purpose of making dense, concise and far-too-clever code. The reality of these operators is that they are small in number and aren't specific to just ```Optional``` and ```Result```. As Arithmetic Operators deal with Numeric values, Functional Operators operators deal with the transformation of Functions themselves. These concepts are taken from other languages, so they aren't at all specific to Swift.
 
-There's a lot of concern that Operator Overloading is going to lead to a lot of Smart People doing some very silly things[^blocks-operator-overloading] for the purpose of making dense and concise code. The reality of these operators is that they are small in number and aren't specific to just ```Optional``` and ```Result```. As Arithmetic Operators deal with Numeric values, Functional Operators operators deal with the transformation of Functions themselves. These concepts are taken from other languages, so they aren't at all specific to Swift.
+There's also some new terminologies and another way of describing the interaction of components, this isn't less true of a [Domain Specific Language](https://developer.apple.com/library/ios/documentation/UserExperience/Conceptual/AutolayoutPG/VisualFormatLanguage/VisualFormatLanguage.html) that we can graft on top of Objective-C[^objc-dsls] or with a [more flexible language](http://robots.thoughtbot.com/writing-a-domain-specific-language-in-ruby). Sure, Objective-C has the benefit of a preprocessor to graft new features onto the language to and reduce the amount of boiler-plate required[^macro-error-handling], but these can become pretty opaque over time. 
 
-There are some very alien concepts when coming from Objective-C, treating *functions-as-types* and composable like any other stucture-or-object. However some of the concepts are incredibly familiar with a computational pattern identical to [Sending Messages to Nil](https://developer.apple.com/library/mac/documentation/cocoa/conceptual/ProgrammingWithObjectiveC/WorkingwithObjects/WorkingwithObjects.html), which can be challenging to some Objective-C newcomers depending on where they have come from! The ```Result``` type goes just a little bit further by providing us with a ```NSError``` when something goes wrong. Compare this to the idiomatic way of returning (by-reference) an ```NSError``` in Objective-C 
+However, unlike a Domain Specific Language, all of the code used is valid Swift, there is no transformation from a language in one domain, to a syntax that the compiler understands. The Compiler is fully aware of the Types of all of the transformed Functions leaving no room for ambiguity. The chances of a runtime error because of a [keypath not existing](http://stackoverflow.com/questions/8561558/objective-c-keyvaluecoding-how-to-avoid-an-exception-with-valueforkeypath) or the type being [different to the one expected by the code](http://stackoverflow.com/questions/2455161/unrecognized-selector-sent-to-instance) are greatly diminished.
 
-Sure, Objective-C has the benefit of a preprocessor to graft new features onto the language to reduce the amount of boiler-plate required[^macro-error-handling], but these bring other problems along with them. The Compiler is fully aware of the types of all of the Functions that are transformed leaving no room for pesky ambiguity. The chances of a runtime error because of a [keypath not existing](http://stackoverflow.com/questions/8561558/objective-c-keyvaluecoding-how-to-avoid-an-exception-with-valueforkeypath) or the type being [different to the one expected by the code](http://stackoverflow.com/questions/2455161/unrecognized-selector-sent-to-instance) are diminished.
+I honestly believe its worth taking a jump at the conceptual hurdle, whether it is for writing code that is more robust and predictable or to satisfy a curiosity of learning something new. 
 
-I honestly believe its worth jumping the conceptual hurdle, for the practicality of coding and the curiosity of learning something new. I don't this post can do that, but there are many other posts that do a fantastic job of explaining this different way of thinking.
-
-Thanks for Reading! As a bonus, the [next post]() will focus on how ```XMLParsableType``` can be implemented in a variety of ways.
+Thanks for Reading! I suggest reading some other brilliant posts that do a better job than I of laying this all out! As a bonus, the [next post]() will focus on how ```XMLParsableType``` can be implemented in a variety of ways.
 
 ---
 
