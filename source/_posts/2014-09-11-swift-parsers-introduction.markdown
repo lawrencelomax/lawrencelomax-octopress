@@ -1,9 +1,9 @@
 ---
 layout: post
 title: "Swift Parsers - Introduction"
-date: 2014-09-03 15:00:00 +0100
+date: 2014-09-11 22:30:00 +0100
 comments: true
-published: false
+published: true
 categories:
 - Functional
 - Swift
