@@ -13,7 +13,7 @@ categories:
 - Backends
 ---
 
-In the [previous post]() we built a ```decode``` function to parse data out from XML and into an ```Animal``` Model using Imperative techniques. This required some efforts in order to satisfy some of the robustness requirements from the [first post]().
+In the [previous post](/blog/2014/09/11/swift-parsers-imperative/) we built a ```decode``` function to parse data out from XML and into an ```Animal``` Model using Imperative techniques. This required some efforts in order to satisfy some of the robustness requirements from the [first post](/blog/2014/09/11/swift-parsers-introduction/).
 
 In this post we'll cover how we can use Functional Programming techniques on top of the language features of Swift to decode XML to an ```Animal``` model. This post assumes that you are comfortable with the [Parameterized Types and Generics](https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/Swift_Programming_Language/Generics.html#//apple_ref/doc/uid/TP40014097-CH26-XID_278).
 
@@ -228,7 +228,7 @@ However, unlike a Domain Specific Language, all of the code used is valid Swift,
 
 I honestly believe its worth taking a jump at the conceptual hurdle, whether it is for writing code that is more robust and predictable or to satisfy a curiosity of learning something new. 
 
-Thanks for Reading! I suggest reading some other brilliant posts that do a better job than I of laying this all out! As a bonus, the [next post]() will focus on how ```XMLParsableType``` can be implemented in a variety of ways.
+Thanks for Reading! I suggest reading some other brilliant posts that do a better job than I of laying this all out! As a bonus, the next post will focus on how ```XMLParsableType``` can be implemented in a variety of ways.
 
 ---
 

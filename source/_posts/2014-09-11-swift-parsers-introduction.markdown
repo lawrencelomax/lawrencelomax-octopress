@@ -83,7 +83,7 @@ If you aren't a crazy person like me you'll probably stick a Webservice in front
 
 ### Next Time...
 
-In the next post, I'll be a crazy person and create a simple XML interface in Swift, and extract data out of it in an Imperative style.
+In the [next post](/blog/2014/09/11/swift-parsers-imperative/), I'll be a crazy person and create a simple XML interface in Swift, and extract data out of it in an Imperative style.
 
 [^abstraction-swift-metal]: The inevitable is happening in iOS Land; Higher Levels of Abstraction as device performance increases, Frameworks and specialized languages for performance critical code. On iOS this is the availability of Accelerate and Metal. The amount of C & C++ in iOS Development may diminish, but I don't see it going away within the next decade.
 

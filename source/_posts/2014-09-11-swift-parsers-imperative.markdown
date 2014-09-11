@@ -13,7 +13,7 @@ categories:
 - Backends
 ---
 
-In the previous post I talked about some of the possible requirements can be for Parser that extracts data from a  Serialization Format and places it in a Language-Native Model Object. In this post I'll cover how an XML Parser for a Model Object can be built using some of the familiar Imperative features of Swift.
+In the [previous post](/blog/2014/09/11/swift-parsers-introduction/) I talked about some of the possible requirements for a Parser that extracts data from a Serialization Format and places it in a Language-Native Model. In this post I'll cover how an XML Parser for a Model Object can be built using some of the familiar Imperative features of Swift.
 
 ### Model and XML
 
@@ -142,7 +142,7 @@ Most importantly is that the nesting is an Imperative way of implementing that t
 
 ### Next Time...
 
-Next time, we'll take a Functional approach to the ```decode``` method, allowing us to think at a much higher level about how a Model is built.
+[Next time](/blog/2014/09/11/swift-parsers-functional/), we'll take a Functional approach to the ```decode``` method, allowing us to think at a much higher level about how a Model is built.
 
 [^hypothetical-xml]: These assumptions actually hold true for a [webservice to be consumed](http://www.livedepartureboards.co.uk/ldbws/) in an Application I was prototyping. Depending on the Webservice an Application is consuming, there's a great deal of assumptions that can be made to reduce the complexity of an Implementation.
 
