@@ -228,7 +228,7 @@ However, unlike a Domain Specific Language, all of the code used is valid Swift,
 
 I honestly believe its worth taking a jump at the conceptual hurdle, whether it is for writing code that is more robust and predictable or to satisfy a curiosity of learning something new. 
 
-Thanks for Reading! I suggest reading some other brilliant posts that do a better job than I of laying this all out! As a bonus, the next post will focus on how ```XMLParsableType``` can be implemented in a variety of ways.
+Thanks for Reading! I suggest reading [some other brilliant posts](http://robnapier.net/functional-wish-fulfillment) that do a [better job than I](http://robots.thoughtbot.com/efficient-json-in-swift-with-functional-concepts-and-generics) of laying this all out! As a bonus, the next post will focus on how ```XMLParsableType``` can be implemented in a variety of ways.
 
 ---
 
