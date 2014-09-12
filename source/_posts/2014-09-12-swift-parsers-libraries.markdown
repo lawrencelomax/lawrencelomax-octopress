@@ -27,7 +27,7 @@ If I were to build these interfaces in an Application I'd want to be cautious to
 
 ### DOM
 
-A [DOM (Document Object Model) or Tree Interface](http://en.wikipedia.org/wiki/Document_Object_Model) to XML represents all of the Elements within an XML Document as a tree of connected nodes. This often means that the whole of an XML Document is read into memory and is navigable by following relationships in a data structure. By exposing the XML Document as a fully realised data structure, a DOM Interface very convenient to navigate.
+A [DOM (Document Object Model) or Tree Interface](http://en.wikipedia.org/wiki/Document_Object_Model) to XML represents all of the Elements within an XML Document as a tree of connected nodes. This often means that the whole of an XML Document is read into memory and is navigable by following relationships in a data structure. By exposing the XML Document as a fully realized data structure, a DOM Interface very convenient to navigate.
 
 By loading all parts of the XML Document into memory the memory usage is proportional to the size of the XML Document. This will be a low cost for small documents, but for larger documents this can result in a substantial amount of memory to allocate[^dom-performance]. 
 
@@ -285,7 +285,7 @@ There's a little more in terms of book-keeping as the End and the Beginning of a
 
 ## Implementation 3: Navigate the libxml2 DOM with Swift
 
-The Building of the tree as a fully realised Swift data structure is a simple implementation and all the work is done up front, but it certainly isn't the least resource intensive. In the previous implementation ```String```s for the Text and Element Name of an XML Element are created regardless of whether they are used or not. Even if the use of the ```Reader``` interface results in a faster implementation than the dual-tree interface of the first Implementation, redundancy in data that is read could mean a lot of wasted effort. 
+The Building of the tree as a fully realized Swift data structure is a simple implementation and all the work is done up front, but it certainly isn't the least resource intensive. In the previous implementation ```String```s for the Text and Element Name of an XML Element are created regardless of whether they are used or not. Even if the use of the ```Reader``` interface results in a faster implementation than the dual-tree interface of the first Implementation, redundancy in data that is read could mean a lot of wasted effort. 
 
 There's no reason that we can't just wrap a whole ```libxml2``` Tree structure in a Class implementing ```XMLParsableType``` that knows how to fetch the Text and Children of an Element from a current Node Pointer:
 

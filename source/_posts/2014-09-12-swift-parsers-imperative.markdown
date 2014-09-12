@@ -96,7 +96,7 @@ With those assumptions in mind, a Protocol for defining how data can be extracte
 
 Protocols are permitted to have a recursive definition, using the `Self` placeholder type. How and where the underlying XML document is stored is left to the implementing class/struct/enum[^lazy-evaluated-functional-programming]. As we will see in [Part 4](/blog/2014/09/12/swift-parsers-libraries/), obtaining a child may be implemented by traversing a fully reified data structure, or moving a cursor partially visible representation of the structure.
 
-As well as a representation of the Data Serialization itself, there needs to be a consistent way of defining that a Model can extract out values of Data Serialization. The entry point can be defined in terms of a decode protocol[^decoder-protocols] that the Model structures should implement:
+As well as a representation of the Data Serializations itself, there needs to be a consistent way of defining that a Model can extract out values of Data Serialization. The entry point can be defined in terms of a decode protocol[^decoder-protocols] that the Model structures should implement:
 
 	public protocol XMLDecoderType {
 		class func decode<X: XMLParsableType>(xml: X) -> Result<Self>

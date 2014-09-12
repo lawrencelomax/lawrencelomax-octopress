@@ -13,11 +13,11 @@ categories:
 - Backends
 ---
 
-This the first in a series of four posts on Parsing code in Swift. This first post takes a look at the development landscape for Cocoa, Swift, Objective-C & Parsers.
+This the first in a series of four posts on Parsing code in Swift. This first post takes a look at the development landscape for Cocoa, Swift, Objective-C & Parsers. Some of the stuff covered here is also handled very well by [Rob Napier](http://robnapier.net/functional-wish-fulfillment) and [Tony DiPasquale](http://robots.thoughtbot.com/efficient-json-in-swift-with-functional-concepts-and-generics) so make sure that you check out their posts if you haven't already.
 
 ### Introduction
 
-iOS Development has been a fun ride over the last few years. Frameworks are added and improved and generally speaking follow some common idioms. UIKit is well-trodden ground with significant changes as the level of interactivity and responsiveness of what a mobile experience is moves ever forward. When new API introduced or refined, compatibility issues occur, we fix them, we add delete some code that new API subsumes, we write some new features using the new API.
+iOS Development has been a fun ride over the last few years. Frameworks are added and improved and generally speaking follow some common idioms. UIKit is well-trodden ground with significant changes as the level of interactivity and responsiveness of what a mobile experience is moves ever forward. When new API introduced or refined, compatibility  issues occur, we fix them, we add delete some code that new API subsumes, we write some new features using the new API.
 
 The Backend of an Application is still a bit of a frontier. With no ```BackEndKit``` to provide a unified interface of a Network Connections and the Persistent State of the Application, there are no 'rails' to start on and how a Backend is built can vary enormously from Application-to-Application. A expanding world of Libraries has sprung up to simplify and consolidate the thinking of how back-end components intact in Objective-C. Much of the dynamism and flexibility of the Objective-C runtime as well as preprocessor macros is leveraged in order to kill repetitious code with metaprogramming. Now that a new Programming language has arrived and new [OS features that all but a modular design ](https://developer.apple.com/library/prerelease/ios/documentation/General/Conceptual/ExtensibilityPG/index.html) the time is now to look at best practice in iOS App Backends.
 
@@ -35,7 +35,7 @@ The compiler is now doing a lot more with type inference can be used to increase
 
 Having headers is fantastic from a documentation point of view, but the evils of duplication makes can make them unwieldy as well as informative. Swift leans on Header generation[^header-generation] and access control to automate the process of generating an Interface from the Implementation itself. Implementation details don't need to be leaked and API stubs don't need to be copy-pasted between ```.h``` and ```.m```
 
-The implementation of both State and Behavior become considerably 'cheaper' to write, re-write and update. Classes require a fraction of the number of characters and lines-of-code to achieve the same results in terms of defining Properties and Methods to their Objective-C brethren[^documentation-loc]. By making the time taken to write and re-write a Class significantly easier, a great deal of the resistance of decomposing Classes into smaller and more testable Units is removed. The Units become smaller and easier to test, revising code becomes easier as part of a virtuous circle.
+The implementation of both State and Behaviour become considerably 'cheaper' to write, re-write and update. Classes require a fraction of the number of characters and lines-of-code to achieve the same results in terms of defining Properties and Methods to their Objective-C brethren[^documentation-loc]. By making the time taken to write and re-write a Class significantly easier, a great deal of the resistance of decomposing Classes into smaller and more testable Units is removed. The Units become smaller and easier to test, revising code becomes easier as part of a virtuous circle.
 
 ### Metaprogramming & Dynamism
 
@@ -79,7 +79,7 @@ XML is an interesting serialization format because it isn’t JSON. It's a forma
 
 XML is also format because there is a good amount of variety in the ways that we model an XML document and its content in API[^dom-sax]. Typically JSON is just extracted into the native Array, Dictionary, String & Numeric types of the targeted programming language. XML grew in popularity at a time when system resources like available memory were at much more of a premium than they are today. Constraints like this tend to drive innovation in a few directions, which make the process of parsing a little bit more interesting that pulling values out of a language-native Dictionary object.
 
-If you aren't a crazy person like me you'll probably stick a Webservice in front of whatever else you need to consume and do all the complex data processing on a Server[^server-processing], then spit everything out in a RESTful JSON service that normalizes any intricacies and madness in the original data. However the reality isn't always so ideal and its up to the Client Software to process data from a variety of Sources and Serialization Formats.
+If you aren't a crazy person like me you'll probably stick a Webservice in front of whatever else you need to consume and do all the complex data processing on a Server[^server-processing], then spit everything out in a RESTful JSON service that normalises any intricacies and madness in the original data. However the reality isn't always so ideal and its up to the Client Software to process data from a variety of Sources and Serialization Formats.
 
 ### Next Time...
 
