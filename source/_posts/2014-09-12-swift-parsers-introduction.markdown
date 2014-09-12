@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Swift Parsers - Introduction"
-date: 2014-09-11 22:30:00 +0100
+date: 2014-09-12 22:30:00 +0100
 comments: true
 published: true
 categories:
@@ -13,7 +13,7 @@ categories:
 - Backends
 ---
 
-This the first in a series of four posts on Parsing code in Swift. This first post takes a look at what the development landscape for Cocoa, Swift, Objective-C & Parsers.
+This the first in a series of four posts on Parsing code in Swift. This first post takes a look at the development landscape for Cocoa, Swift, Objective-C & Parsers.
 
 ### Introduction
 

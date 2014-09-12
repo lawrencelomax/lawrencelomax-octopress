@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Swift Parsers - Imperative"
-date: 2014-09-11 22:30:00 +0100
+date: 2014-09-12 22:30:01 +0100
 comments: true
 published: true
 categories:
@@ -13,11 +13,11 @@ categories:
 - Backends
 ---
 
-In the [previous post](/blog/2014/09/11/swift-parsers-introduction/) I talked about some of the possible requirements for a Parser that extracts data from a Serialization Format and places it in a Language-Native Model. In this post I'll cover how an XML Parser for a Model Object can be built using some of the familiar Imperative features of Swift.
+In the [previous post](/blog/2014/09/11/swift-parsers-introduction/) I talked about some of the possible requirements for a Parser that extracts data from a Serialization Format and places it in a Language-Native Model. In this post I'll cover how an XML Parser for a Model Object can be built using some of the familiar Imperative features of Swift. Sample Code is [available on GitHub](http://github.com/lawrencelomax/XMLParsable).
 
 ### Model and XML
 
-Let's define a hypothetical XML that we wish to parse:
+Let's define a [hypothetical XML](https://github.com/lawrencelomax/XMLParsable/blob/master/XMLParsableTests/Fixtures/zoo.xml) that we wish to parse:
 
 	<zoo>
 		<animals>
@@ -55,7 +55,7 @@ Let's define a hypothetical XML that we wish to parse:
 		</facilities>
 	</zoo>
 
-The Model includes the parts of the XML that our Application cares about and ignores others:
+[The Model](https://github.com/lawrencelomax/XMLParsable/blob/master/XMLParsableTests/Fixtures/Zoo.swift) includes the parts of the XML that our Application cares about and ignores others:
 
 	public struct Animal: XMLDecoderType {
 		public let kind: String
@@ -74,7 +74,7 @@ This is simple and immutable, the Parser forms part of the backend for the User 
 
 ### An Interface to XML
 
-Stubbing a Protocol or Interface is a great way of getting to grips with the problem that needs to be solved. It also helps to determine what is necessary for to implement, as well as the details that can be ignored to solve the problem at hand. There is also a bunch of [previously laid out requirements to be considered]() 
+Stubbing a Protocol or Interface is a great way of getting to grips with the problem that needs to be solved. It also helps to determine what is necessary for to implement, as well as the details that can be ignored to solve the problem at hand. There is also a bunch of [previously laid out requirements to be considered](/blog/2014/09/11/swift-parsers-introduction/) 
 
 In parsing this XML[^hypothetical-xml]. I've made a few assumptions:
 

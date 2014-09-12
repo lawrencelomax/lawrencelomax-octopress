@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Swift Parsers - Libraries"
-date: 2014-09-06 15:00:00 +0100
+date: 2014-09-12 22:30:03 +0100
 comments: true
 published: false
 categories:
@@ -13,7 +13,7 @@ categories:
 - Backends
 ---
 
-In the previous posts in this series the Parsers have used a hypothetical ```XMLParsableType``` Protocol for fetching data from an XML Element. I previously mentioned that there are myriad libraries and methods for parsing an XML document for iOS. 
+In the previous posts in this series the Parsers have used a hypothetical ```XMLParsableType``` Protocol for fetching data from an XML Element. I previously mentioned that there are myriad libraries and methods for parsing an XML document for iOS. All of the code in this article and previous articles [is available on GitHub](http://github.com/lawrencelomax/XMLParsable).
 
 In this post we're going to take a look at two things: 
 1. How ```XMLParsableType``` can be implemented using ```libxml2```. 
@@ -127,7 +127,7 @@ Swift provides the ```SequenceType``` and ```GeneratorType``` protocols to allow
 
 By moving enumeration to a  ```Sequence``` type, consumers of the DOM don't need to be concerned with how the list of Child Nodes is navigated. 
 
-## Attempt 1: Swift Structure from libxml2 DOM
+## Implementation 1: Swift Structure from libxml2 DOM
 
 The first thing that springs to mind is that given a DOM in ```libxml```, some of the Data can be pulled out into a pure Swift data structure[^class-vs-struct]. This Swift data structure will contain all of the relationships and Text Nodes, whilst implementing the previously defined ```XMLParsableType```.
 
@@ -177,11 +177,11 @@ The ```childrenOfNode``` function is placed in the ```LibXMLDOM``` class to sepa
 
 That's pretty much it, there's a little more in terms of plumbing and error handling, but its not too hard to take an XML Document from ```libxml2``` and get the data into Swift.
 
-## Attempt 2: Swift Structure from libxml2 Buffered Reader
+## Implementation 2: Swift Structure from libxml2 Buffered Reader
 
 On reflection, this means that the XML Document is built twice. Once to read the document into ```libxml2``` and the second to extract out the Text Nodes and Element Names into a Tree of Swift data structures. The costs of allocating a bunch of Swift structures could potentially be significant so there will likely be a performance benefit to only building the tree once.
 
-[The Reader interface for ```libxml2```](http://xmlsoft.org/xmlreader.html) is an interface to the XML document that will incrementally read each component of the document in a depth-first fashion. The Current Node is repeatedly advanced by calling the [```xmlTextReaderRead```](http://xmlsoft.org/html/libxml-xmlreader.html#xmlTextReaderRead) function until the End of the File has been reached, or an Error has occured in parsing. Using the Reader, a Swift Data structure can be built without having to create a DOM in ```libxml2```
+[The Reader interface for ```libxml2```](http://xmlsoft.org/xmlreader.html) is an interface to the XML document that will incrementally read each component of the document in a depth-first fashion. The Current Node is repeatedly advanced by calling the [```xmlTextReaderRead```](http://xmlsoft.org/html/libxml-xmlreader.html#xmlTextReaderRead) function until the End of the File has been reached, or an Error has occured in parsing. Using the Reader, a Swift Data structure can be built without having to create a DOM in ```libxml2```. It is possible however, that the overhead associated by advancing through the ```Reader``` buffer could be greater than the cost of allocating the DOM in ```libxml2```
 
 A Lazy ```Sequence``` of nodes can be made for the [Reader interface](http://xmlsoft.org/xmlreader.html) in the same way as the [Tree interface](http://xmlsoft.org/html/libxml-tree.html). The ```Sequence``` is made from the more fundemental ```Generator```:
 
@@ -244,52 +244,52 @@ In the ```LibXMLReader``` class, a ```Context``` class is created to dispose the
 
 The Tree can be built up using a Recursive function, passing through the ```ReaderSequence```
 
-
 	private class func parseRecursive(reader: xmlTextReaderPtr, _ sequence: ReaderSequence) -> Result<XMLNode> {
-			if LibXMLReaderType.forceMake(reader) != .ELEMENT {
-				let realType = LibXMLReaderGetElementTypeString(LibXMLReaderType.forceMake(reader))
-				return Result.Error(LibXMLReader.error("Recursive Node Parse Requires an ELEMENT, got \(realType)"))
-			}
-			
-			var name = LibXMLReaderGetName(reader)
-			var text: String?
-			var children: [XMLNode] = []
-			
-			if LibXMLReaderIsEmpty(reader) {
-				return Result.value(XMLNode(name: name, text: text, children: children))
-			}
-			
-			for (reader, mode) in sequence {
-				let type = LibXMLReaderType.forceMake(xmlTextReaderNodeType(reader))
-				let typeString = LibXMLReaderGetElementTypeString(type)
-				let modeString = LibXMLReaderGetReaderMode(mode)
-			
+		if LibXMLReaderType.forceMake(reader) != .ELEMENT {
+			let realType = LibXMLReaderGetElementTypeString(LibXMLReaderType.forceMake(reader))
+			return Result.Error(LibXMLReader.error("Recursive Node Parse Requires an ELEMENT, got \(realType)"))
+		}
+		
+		var name = LibXMLReaderGetName(reader)
+		var text: String?
+		var children: [XMLNode] = []
+		
+		if LibXMLReaderIsEmpty(reader) {
+			return Result.value(XMLNode(name: name, text: text, children: children))
+		}
+		
+		for (reader, mode) in sequence {
+			let type = LibXMLReaderType.forceMake(xmlTextReaderNodeType(reader))
+			let typeString = LibXMLReaderGetElementTypeString(type)
+			let modeString = LibXMLReaderGetReaderMode(mode)
+		
 			switch type {
 				case .TEXT:
 					text = LibXMLReaderGetText(reader);
 				case .ELEMENT:
 					let childResult = self.parseRecursive(reader, sequence)
-						switch childResult {
-							case .Error(let error): return childResult
-							case .Value(let box): children.append(childResult.toOptional()!)
-						}
+					switch childResult {
+						case .Error(let error): return childResult
+						case .Value(let box): children.append(childResult.toOptional()!)
+					}
 				case .END_ELEMENT:
 					assert(name == LibXMLReaderGetName(reader), "BEGIN AND END NOT MATCHED")
 					return Result.value(XMLNode(name: name, text: text, children: children))
 				default:
-				break
+					break
 			}
 		}
 		
 		return Result.Error(LibXMLReader.error("I don't know how this became exhausted, unbalanced begin and end of document"))
 	}
 
+There's a little more in terms of book-keeping as the End and the Beginning of a nested element need to be matched up, but it should look very similar to the DOM based approach.
 
-## Attempt 3: Navigate the libxml2 DOM with Swift
+## Implementation 3: Navigate the libxml2 DOM with Swift
 
-The Building of the tree as a fully realized structure is a Simple implementation, but it certainly isn't the least resource intensive. Swift ```String```s for the Text and Element Name of an XML Element are created regardless of whether they are used or not.
+The Building of the tree as a fully realized Swift data structure is a simple implementation and all the work is done up front, but it certainly isn't the least resource intensive. In the previous implementation ```String```s for the Text and Element Name of an XML Element are created regardless of whether they are used or not. Even if the use of the ```Reader``` interface results in a faster implementation than the dual-tree interface of the first Implementation, redundancy in read data could mean a lot of wasted effort in some circumstances. 
 
-There's no reason that we can't just wrap the whole ```libxml2``` Tree structure in a Class implementing ```XMLParsableType``` that knows how to fetch the Text and Children of an Element.
+There's no reason that we can't just wrap a whole ```libxml2``` Tree structure in a Class implementing ```XMLParsableType``` that knows how to fetch the Text and Children of an Element from a current Node Pointer:
 
 	public final class LibXMLNavigatingParserDOM: XMLNavigatingParserType, XMLParsableType {
 		private let node: xmlNodePtr
@@ -323,7 +323,7 @@ There's no reason that we can't just wrap the whole ```libxml2``` Tree structure
 		}
 	}
 
-The ```LibXMLDOM.Context``` is just a internal class responsible for cleaning up the manual-memory-managed ```libxml2``` document when the root node is deallocated:
+The ```LibXMLDOM.Context``` is just a internal class responsible for cleaning up the manual-memory-managed ```libxml2``` DOM document when the root node is deallocated:
 
 	internal final class LibXMLDOM {
 		struct Context {
@@ -343,13 +343,13 @@ The ```LibXMLDOM.Context``` is just a internal class responsible for cleaning up
 		}
 	}
 
-Still quite a simple implementation, that's about all we need to implement the ```XMLParsableType``` interface. The creation of the Swift Strings for the Text of an Element are deferred until they are actually needed. If nearly all of the Text Elements are consumed when mapping to a model it won't have much (if any) impact on performance relative to the first attempt.
+Still very simple and that's about all that is required to implement ```XMLParsableType``` protocol. The creation of the Swift ```String```s for the Text of an Element are deferred until they are actually needed.
 
-## Attempt 4: Navigate with a Reader
+## Implementation 4: Navigate with a Reader
 
-Our restricted representation of what XML can be is based purely on the need to access Text Nodes within a Tree. Depending on what we are ignoring in the XML Document, the parser could potentially read a large number of Attributes and ignored Elements into memory that never need to be pulled out.
+In Implementation 2, a ```Reader``` was used to navigate the XML Document and extract all of the Elements and Text Nodes as a Swift Data structure. Instead of building a ```Swift``` data structure, it should be possible to extract out Text from ```Reader``` without needing a secondary data structure at all. This should work well in circumstances where the amount of data extracted from the whole document is minimal.
 
-The DOM parser for ```libxml2``` will have parsed the whole document, elements, attributes and all by the time it is created. Depending on the how much of the document is ignored, we may get significant performance benefit. This will also prove that the cost for parsing an XML document is heavily influenced by the XML Parser costs themselves, not the ```XMLParseableType``` abstraction itself and any composition on top.
+This will result in a substantially different implementation to the previous three and will be worth implementing at a later date. It is currently unimplemented in the [```XMLParsable```](http://github.com/lawrencelomax/XMLParsable) project.
 
 ## Testing
 
