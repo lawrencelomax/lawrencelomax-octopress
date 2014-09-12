@@ -79,10 +79,10 @@ In parsing this XML[^hypothetical-xml]. I've made a few assumptions:
 
 With those assumptions in mind, a Protocol for defining how data can be extracted from a Parsable XML Node can be made:
 
-    public protocol XMLParsableType {
-      func parseChildren(childTag: String) -> [Self]
-      func parseText() -> String?
-    }
+	public protocol XMLParsableType {
+		func parseChildren(childTag: String) -> [Self]
+		func parseText() -> String?
+	}
 
 *"That's It?"*. Yep. Everything else can be composed on top of this minimal protocol; more complex data extraction functions can be built on top of these fundamentals. It's easy to define the responsibility of this Protocol in one sentence:
 
@@ -93,7 +93,7 @@ Protocols are permitted to have a recursive definition, using the `Self` placeho
 As well as a representation of the Data Serialization itself, there needs to be a consistent way of defining that a Model can extract out values of Data Serialization. The entry point can be defined in terms of a decode protocol[^decoder-protocols] that the Model structures should implement:
 
 	public protocol XMLDecoderType {
-	  class func decode<X: XMLParsableType>(xml: X) -> Result<Self>
+		class func decode<X: XMLParsableType>(xml: X) -> Result<Self>
 	}
 
 This function will be where the action is and can be implemented in the Model type definitions themselves or separately as Extensions. As ```XMLParsableType``` has a ```Self``` requirement, the usage of an ```XMLParsableType``` protocol needs to be [satisfied with Generics](https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/Swift_Programming_Language/Generics.html#//apple_ref/doc/uid/TP40014097-CH26-XID_286).
@@ -107,8 +107,8 @@ Some Cocoa APIs use ```nil``` as the return value represent failure[^nil-vs-none
 Moving to a Safe Swift world, return of an ```NSError``` and a possible value can be encapsulated in the same value using an [Enumeration with Associated Values](https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/Swift_Programming_Language/Enumerations.html#//apple_ref/doc/uid/TP40014097-CH12-XID_227), rather [dereferencing pointers](https://www.google.co.uk/search?client=safari&rls=en&q=nserror+dereference+pointer&ie=UTF-8&oe=UTF-8&gfe_rd=cr&ei=3MEOVNesH4G28AOjw4D4Bw#rls=en&q=nserror+dereference+pointer). This is the ``Result`` with the same availability semantics as an ```Optional```, with additional failure information provided with an ```NSError``` in the failure case:
 
 	public enum Result<V> {
-	  case Error(NSError)
-	  case Value(Box<V>)
+		case Error(NSError)
+		case Value(Box<V>)
 	}
 
 As there are potentially many sources of failure in the ```decode``` method, it is handy to write a Helper Method that can "promote" an ```Optional``` to a ```Result``` with an Error if the Optional does not contain a value. This will populate the ```NSError``` with a default Error Domain and attach a User Defined message:
@@ -121,18 +121,18 @@ From the previous post, I mentioned that the lack a dynamic runtime in Swift wil
 
 Failing-Fast was outlined as a potential feature of a Parser in the previous post, the implementation of an XML-to-Animal decoding function will need to take this into account. The following Imperative approach shows how it may be possible to extract a ```Result<Animal>``` from an ```XMLParsableType```:
 
-	  static func decode<X: XMLParsableType>(xml: X) -> Result<Animal> {
-	    if let type = XMLParser.parseChildText("type")(xml: xml).toOptional() {
-	      if let name = XMLParser.parseChildText("name")(xml: xml).toOptional() {
-	        if let urlString = XMLParser.parseChildText("url")(xml: xml).toOptional() {
-	          return Result.value(self(type: type, name: name, url: NSURL.URLWithString(urlString)) )
-	        }
-	        return Result.Error(decodeError("Could not parse 'urlString' as a String"))
-	      }
-	      return Result.Error(decodeError("Could not parse 'name' as a String"))
-	    }
-	    return Result.Error(decodeError("Could not parse 'type' as a String"))
-	  }
+	static func decode<X: XMLParsableType>(xml: X) -> Result<Animal> {
+		if let type = XMLParser.parseChildText("type")(xml: xml).toOptional() {
+			if let name = XMLParser.parseChildText("name")(xml: xml).toOptional() {
+				if let urlString = XMLParser.parseChildText("url")(xml: xml).toOptional() {
+					return Result.value(self(type: type, name: name, url: NSURL.URLWithString(urlString)) )
+				}
+				return Result.Error(decodeError("Could not parse 'urlString' as a String"))
+			}
+			return Result.Error(decodeError("Could not parse 'name' as a String"))
+		}
+		return Result.Error(decodeError("Could not parse 'type' as a String"))
+	}
 
 This doesn't look great. The nesting is terrible, the Failure and Success conditions are separated around the conditional. In this case, there are only three values, a Model with more properties would make the nesting significantly worse. In Objective-C this can be better tackled by returning early on failure, however this would require lots of force unwrapping[^nested-branching]. Conditional Statements are required as Failure when one of the values is missing is a requirement of our Model and is guaranteed to exist in the XML. 
 

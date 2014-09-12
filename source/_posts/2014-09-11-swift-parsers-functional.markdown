@@ -31,10 +31,10 @@ By now it should be second nature to think of the concatenation of two Strings u
 	public func •<A, B, C>(f: B -> C, g: A -> B) -> A -> C	// The 'compose' operator from Swiftz
 	
 	func prefixer(prefix: String)(string: String) -> String { // Equivalent to String -> String -> String
-	  return prefix + string
+		return prefix + string
 	}
 	func postfixer(postfix: String)(bar: String) -> String { // Equivalent to String -> String -> String
-	  return string + postfix
+		return string + postfix
 	}
 	
 	let happyPrefix = prefixer("😃") // String -> String. The first String argument of 'prefixer' is applied.
@@ -105,21 +105,21 @@ This is the heart of Function Composition, with ```Bind``` performing the behavi
 There appeares to be some common chained functions appearing. These can be extracted out and into the ```XMLParser``` class[^xmlparser-class] and built using the same Higher-Order Functions and other functions and methods that have been defined for ```XMLParserType```
 
 	extension XMLParser {
-	    public class func parseChildText<X: XMLParsableType>(elementName: String)(xml: X) -> Result<String> {
-	      let textParser: X -> Result<String> = promoteXmlError("Could not parse text for child \(elementName)") • { $0.parseText()}
-	      return self.parseChild(elementName)(xml: xml) >>- textParser
-	    }
+		public class func parseChildText<X: XMLParsableType>(elementName: String)(xml: X) -> Result<String> {
+			let textParser: X -> Result<String> = promoteXmlError("Could not parse text for child \(elementName)") • { $0.parseText()}
+			return self.parseChild(elementName)(xml: xml) >>- textParser
+		}
 		
-	    public class func parseChildRecursive<X: XMLParsableType>(elementNames: [String])(xml: X) -> Result<X> {
-	      return elementNames.reduce(Result.value(xml)) { (parsable: Result<X>, currentElementName) in
-	        return parsable >>- self.parseChild(currentElementName)
-	      }
-	    }
-	    
-	    public class func parseChildRecusiveText<X: XMLParsableType>(elementNames: [String])(xml: X) -> Result<String> {
-	      let textParser: X -> Result<String> = promoteXmlError("Could not parse text for child \(elementNames.last)") • { $0.parseText()}
-	      return self.parseChildRecursive(elementNames)(xml: xml) >>- textParser
-	    }
+		public class func parseChildRecursive<X: XMLParsableType>(elementNames: [String])(xml: X) -> Result<X> {
+			return elementNames.reduce(Result.value(xml)) { (parsable: Result<X>, currentElementName) in
+				return parsable >>- self.parseChild(currentElementName)
+			}
+		}
+		
+		public class func parseChildRecusiveText<X: XMLParsableType>(elementNames: [String])(xml: X) -> Result<String> {
+			let textParser: X -> Result<String> = promoteXmlError("Could not parse text for child \(elementNames.last)") • { $0.parseText()}
+			return self.parseChildRecursive(elementNames)(xml: xml) >>- textParser
+		}
 	}
 
 [```reduce```](http://swifter.natecook.com/func/reduce/) is another Higher-Order function of the [```Sequence``` type](http://swifter.natecook.com/protocol/SequenceType/) making an appearance. Using it means that the ```parseChildRecursive``` [doesn't need to be implemented in a recursive manner](http://bit.ly/1qZxDCb).
@@ -140,11 +140,11 @@ Unlike JSON, there is no [explicit syntax for a Numeric value](http://en.wikiped
 Coercing a value from a String to a Numeric type may not always work. The String '14123' can be interpreted as an ```Int``` but the value ```134djk23``` cannot. Again, this falls into our notion of Model decoding failure. The ```NSNumberFormatter``` class is a Cocoa way of interpreting Strings as Numbers, we can write an extension for the  ```Int``` type to intepret a ```String``` as an ```Int```, with ```Optional.None``` used to representing failure.
 
 	public extension Int {
-	  public static func parseString(string: String) -> Int? {
-	    let formatter = NSNumberFormatter()
-	    let number = formatter.numberFromString(string)
-	    return number?.integerValue
-	  }
+		public static func parseString(string: String) -> Int? {
+			let formatter = NSNumberFormatter()
+			let number = formatter.numberFromString(string)
+			return number?.integerValue
+		}
 	}
 
 As previously mentioned, Cocoa APIs in Swift expose failure as the ```nil```/```.None``` case of an Optional Type[^nserror-failure]. However, our Parser requires the additional information in a ```Result``` type. One approach is to extend Cocoa classes with additional methods that return a ```Result``` instead of an ```Optional```, but this might not be the ideal solution[^parsing-bloating-categories]. Instead we can again think in terms of Function Composition to make a function that returns ```Result<Int>``` instead of ```Int?```
@@ -174,23 +174,23 @@ Now we have everything we need to extract values out of ```XMLParsableType``` an
 
 Let's turn back to Curried Functions, this time to a Curried 'Constructor'[^constructor-factory-method]:
 
-    static func build(type: String)(name: String)(url: NSURL) -> Animal {
-      return self(type: type, name: name, url: url)
-    }
+	static func build(type: String)(name: String)(url: NSURL) -> Animal {
+		return self(type: type, name: name, url: url)
+	}
 
 By adding a little more context to each of the applications of Higher-Order functions, we should be able to follow what is going on as the ```Animal.build``` function down to a ```Result<Animal>```:
 
-    // These are previously defined using Higher-Order functions and XMLParser
+	// These are previously defined using Higher-Order functions and XMLParser
 	let type: Result<String> = ...
-    let name: Result<String> = ...
-    let url: Result<NSURL> = ...
-    
+	let name: Result<String> = ...
+	let url: Result<NSURL> = ...
+	
 	// The Build Function is a Curried function that will yeild functions with every application until we have the Animal value.
 	let build: String -> String -> NSURL -> Animal = self.build
 	// Each of these stage gets the Animal structure closer to being initialized
-    let first: Result<String -> NSURL -> Animal> = self.build <^> type
-    let second: Result<NSURL -> Animal> = first <*> name
-    let third: Result<Animal> = second <*> url
+	let first: Result<String -> NSURL -> Animal> = self.build <^> type
+	let second: Result<NSURL -> Animal> = first <*> name
+	let third: Result<Animal> = second <*> url
 
 This feels a lot like solving a Mathmatical equation by reducing the variables to balance each side of the equation. There are a few more Higer-Order functions that are being used here, doing the heavy lifting of pulling values and functions out of a ```Result``` context executing a function and then sticking the return value back in a ```Result``` again.
 
