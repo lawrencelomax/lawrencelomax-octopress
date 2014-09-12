@@ -57,8 +57,8 @@ With the idea of composing functions [without having to declare one](https://dev
 
 Further, we can think of each of the properties of a decoded ```Animal``` as the application of the above functions to the source ```XMLParsableType``` from the XML Document.
 
-	let kind: Result<String> = typeParser(xml)
-	let name: Result<String> = typeParser(xml)
+	let kind: Result<String> = kindParser(xml)
+	let name: Result<String> = nameParser(xml)
 	let url: Result<String> urlParser(xml)
 
 We've allready seen that we can use Swift's Optional Chaining in our parser to limit the number of occurences of handling failure. However, ```Result``` isn't a blessed by the language with [special syntax for chaining](https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/Swift_Programming_Language/OptionalChaining.html#//apple_ref/doc/uid/TP40014097-CH21-XID_356). It would be great to get the same behaviour for the Result type.
@@ -73,7 +73,7 @@ It is called ['Bind'](http://bit.ly/1weNYBM) and it can be described in the foll
 
 Sounds the same as Optional Chaining! In fact Optional Chaining [can be defined in this way](https://github.com/maxpow4h/swiftz/blob/master/swiftz_core/swiftz_core/Optional.swift#L42). It should be possible to construct a ```Result<String>``` for the  ```kind``` value of an ```Animal``` this way:
 
-	let kind: Result<String> = xml.parseChildren("type").first >>- { $0.parseText() } // Compiler Error!
+	let kind: Result<String> = xml.parseChildren("kind").first >>- { $0.parseText() } // Compiler Error!
 
 Damn, looks like the types don't match up since the ```kind``` value should be a ```Result<String>``` instead of a ```String?```. Besides, this looks much worse with needing to use an inline closure to invert the ```parseText``` 0-arg instance method on ```xml``` into a function that takes an ```xml``` parameter and executes ```parseText```. There has to be a better way of doing this...
 
@@ -174,21 +174,21 @@ Now we have everything we need to extract values out of ```XMLParsableType``` an
 
 Let's turn back to Curried Functions, this time to a Curried 'Constructor'[^constructor-factory-method]:
 
-	static func build(type: String)(name: String)(url: NSURL) -> Animal {
-		return self(type: type, name: name, url: url)
+	static func build(kind: String)(name: String)(url: NSURL) -> Animal {
+		return self(kind: kind, name: name, url: url)
 	}
 
 By adding a little more context to each of the applications of Higher-Order functions, we should be able to follow what is going on as the ```Animal.build``` function down to a ```Result<Animal>```:
 
 	// These are previously defined using Higher-Order functions and XMLParser
-	let type: Result<String> = ...
+	let kind: Result<String> = ...
 	let name: Result<String> = ...
 	let url: Result<NSURL> = ...
 	
 	// The Build Function is a Curried function that will yeild functions with every application until we have the Animal value.
 	let build: String -> String -> NSURL -> Animal = self.build
 	// Each of these stage gets the Animal structure closer to being initialized
-	let first: Result<String -> NSURL -> Animal> = self.build <^> type
+	let first: Result<String -> NSURL -> Animal> = self.build <^> kind
 	let second: Result<NSURL -> Animal> = first <*> name
 	let third: Result<Animal> = second <*> url
 

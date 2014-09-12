@@ -22,21 +22,27 @@ Let's define a hypothetical XML that we wish to parse:
 	<zoo>
 		<animals>
 			<animal>
-				<type>cat</type>
-				<name>grumpy</name>
+				<kind>cat</kind>
+				<nested_nonsense>
+					<name>grumpy</name>
+				</nested_nonsense>
 				<url>http://en.wikipedia.org/wiki/Grumpy_Cat</url>
 			</animal>
 			<animal>
-				<type>cat</type>
-				<name>long</name>
+				<kind>cat</kind>
+				<nested_nonsense>
+					<name>long</name>
+				</nested_nonsense>
 				<url>http://knowyourmeme.com/memes/longcat</url>
 			</animal>
 			<animal>
-				<type>dog</type>
-				<name>i have no idea what i'm doing</name>
+				<kind>dog</kind>
+				<nested_nonsense>
+					<name>i have no idea what i'm doing</name>
+				</nested_nonsense>
 				<url>http://knowyourmeme.com/memes/i-have-no-idea-what-im-doing</url>
 			</animal>
-		</animal>
+		</animals>
 		<facilities>
 			<toilet>42</toilet>
 			<disabled_parking>true</disabled_parking>
@@ -51,18 +57,18 @@ Let's define a hypothetical XML that we wish to parse:
 
 The Model includes the parts of the XML that our Application cares about and ignores others:
 
-	public struct Animal {
-	  let type: String
-	  let name: String
-	  let url: NSURL
+	public struct Animal: XMLDecoderType {
+		public let kind: String
+		public let name: String
+		public let url: NSURL
 	}
 	
 	public struct Zoo {
-	  let toiletCount: Int
-	  let disabledParking: Bool
-	  let drainage: String
-	  let animals: [Animal]
-	 }
+		let toiletCount: Int
+		let disabledParking: Bool
+		let drainage: String
+		let animals: [Animal]
+	}
 
 This is simple and immutable, the Parser forms part of the backend for the User Interface to consume. There's no reason for the User Interface to be able to manipulate these Models directly.
 
@@ -122,7 +128,7 @@ From the previous post, I mentioned that the lack a dynamic runtime in Swift wil
 Failing-Fast was outlined as a potential feature of a Parser in the previous post, the implementation of an XML-to-Animal decoding function will need to take this into account. The following Imperative approach shows how it may be possible to extract a ```Result<Animal>``` from an ```XMLParsableType```:
 
 	static func decode<X: XMLParsableType>(xml: X) -> Result<Animal> {
-		if let type = XMLParser.parseChildText("type")(xml: xml).toOptional() {
+		if let kind = XMLParser.parseChildText("kind")(xml: xml).toOptional() {
 			if let name = XMLParser.parseChildText("name")(xml: xml).toOptional() {
 				if let urlString = XMLParser.parseChildText("url")(xml: xml).toOptional() {
 					return Result.value(self(type: type, name: name, url: NSURL.URLWithString(urlString)) )
@@ -131,7 +137,7 @@ Failing-Fast was outlined as a potential feature of a Parser in the previous pos
 			}
 			return Result.Error(decodeError("Could not parse 'name' as a String"))
 		}
-		return Result.Error(decodeError("Could not parse 'type' as a String"))
+		return Result.Error(decodeError("Could not parse 'kind' as a String"))
 	}
 
 This doesn't look great. The nesting is terrible, the Failure and Success conditions are separated around the conditional. In this case, there are only three values, a Model with more properties would make the nesting significantly worse. In Objective-C this can be better tackled by returning early on failure, however this would require lots of force unwrapping[^nested-branching]. Conditional Statements are required as Failure when one of the values is missing is a requirement of our Model and is guaranteed to exist in the XML. 
