@@ -137,20 +137,14 @@ By moving enumeration to a  ```Sequence``` type, consumers of the DOM don't need
 
 The first thing that springs to mind is that given a DOM in ```libxml```, some of the data can be pulled out into a pure Swift data structure[^class-vs-struct]. This Swift data structure will contain all of the relationships and Text Nodes, whilst implementing the previously defined ```XMLParsableType```.
 
-	public final class XMLNode: XMLParsableType {
+	public struct XMLNode: XMLParsableType {
 		public let name: String
 		public let text: String?
 		public let children: [XMLNode]
-		
-		init (name: String, text: String?, children: [XMLNode]) {
-			self.name = name
-			self.text = text
-			self.children = children
-		}
-		
-		public func parseChildren(childTag: String) -> [XMLNode] {
+	
+		public func parseChildren(elementName: String) -> [XMLNode] {
 			return self.children.filter { node in
-				return node.name == childTag
+				return node.name == elementName
 			}
 		}
 		
@@ -185,9 +179,9 @@ That's pretty much it, there's a little more in terms of plumbing and error hand
 
 ## Implementation 2: Swift Structure from libxml2 Buffered Reader
 
-On reflection, this means that the XML Document is built twice. Once to read the document into ```libxml2``` and the second to extract out the Text Nodes and Element Names into a Tree of Swift data structures. The costs of allocating a bunch of Swift structures could potentially be significant so there will likely be a performance benefit to only building the tree once.
+Looking at the first this means that the XML Document is built twice. Once to read the document into ```libxml2``` and the second to extract out the Text Nodes and Element Names into a Tree of Swift data structures. The costs of allocating a bunch of Swift structures and objects could be significant so there will likely be a performance benefit to only building the tree once.
 
-[The Reader interface for ```libxml2```](http://xmlsoft.org/xmlreader.html) is an interface to the XML document that will incrementally read each component of the document in a depth-first fashion. The Current Node is repeatedly advanced by calling the [```xmlTextReaderRead```](http://xmlsoft.org/html/libxml-xmlreader.html#xmlTextReaderRead) function until the End of the File has been reached, or an Error has occured in parsing. Using the Reader, a Swift Data structure can be built without having to create a DOM in ```libxml2```. It is possible however, that the overhead associated by advancing through the ```Reader``` buffer could be greater than the cost of allocating the DOM in ```libxml2```
+[The Reader interface for ```libxml2```](http://xmlsoft.org/xmlreader.html) is an interface to the XML document that will incrementally read each component of the document in a depth-first fashion. The Current Node is repeatedly advanced by calling the [```xmlTextReaderRead```](http://xmlsoft.org/html/libxml-xmlreader.html#xmlTextReaderRead) function until the end of the file has been reached, or an Error has occured in parsing. Using the Reader, a Swift Data structure can be built without having to create a DOM in ```libxml2```. It is possible however, that the overhead associated by advancing through the ```Reader``` buffer could be greater than the cost of allocating the DOM in ```libxml2```
 
 A Lazy ```Sequence``` of nodes can be made for the [Reader interface](http://xmlsoft.org/xmlreader.html) in the same way as the [Tree interface](http://xmlsoft.org/html/libxml-tree.html). The ```Sequence``` is made from the more fundemental ```Generator```:
 
@@ -293,7 +287,7 @@ There's a little more in terms of book-keeping as the End and the Beginning of a
 
 ## Implementation 3: Navigate the libxml2 DOM with Swift
 
-The Building of the tree as a fully realized Swift data structure is a simple implementation and all the work is done up front, but it certainly isn't the least resource intensive. In the previous implementation ```String```s for the Text and Element Name of an XML Element are created regardless of whether they are used or not. Even if the use of the ```Reader``` interface results in a faster implementation than the dual-tree interface of the first Implementation, redundancy in read data could mean a lot of wasted effort in some circumstances. 
+The Building of the tree as a fully realized Swift data structure is a simple implementation and all the work is done up front, but it certainly isn't the least resource intensive. In the previous implementation ```String```s for the Text and Element Name of an XML Element are created regardless of whether they are used or not. Even if the use of the ```Reader``` interface results in a faster implementation than the dual-tree interface of the first Implementation, redundancy in data that is read could mean a lot of wasted effort. 
 
 There's no reason that we can't just wrap a whole ```libxml2``` Tree structure in a Class implementing ```XMLParsableType``` that knows how to fetch the Text and Children of an Element from a current Node Pointer:
 
@@ -363,7 +357,18 @@ One of the great aspects of building an XML Parser in this way is that the imple
 
 The correctness testing is relatively simple, just run the same suite of tests over a fixed XML resource and verify that all of the properties in the Model are set to the values in the resource.
 
-XCode 6 makes performance testing easy too. The same XML parse to Model decode task can be stuck inside a [measurement block]() and repeated a number of times to eliminate any performance fluctuations of the test host. The Performance Tests should be designed in such a way that they can expose some the performance characteristics of each implementation with a different data set. One of these characteristics is that the amount of unused or redundant data in a document can massively impact performance.
+XCode 6 makes performance testing easy too. The same XML parse to Model decode task can be stuck inside a [measurement block](https://developer.apple.com/library/prerelease/ios/documentation/DeveloperTools/Conceptual/testing_with_xcode/testing_3_writing_test_classes/testing_3_writing_test_classes.html#//apple_ref/doc/uid/TP40014132-CH4-SW8) and repeated a number of times to eliminate any performance fluctuations of the test host. The Performance Tests should be designed in such a way that they can expose some the performance characteristics of each implementation with a different data set. One of these characteristics is that the amount of unused or redundant data in a document can massively impact performance.
+
+The small suite of performance tests in [```XMLParsable```](https://github.com/lawrencelomax/XMLParsable/blob/master/XMLParsableTests/Performance/XMLPerformanceTests.swift) test the same source data on each of the implementations on a number of axis, using Data vs. using Files and a small XML file vs. an XML file with a lot of redundant data.
+
+|             |          Grouping           ||
+First Header  | Second Header | Third Header |
+ ------------ | :-----------: | -----------: |
+Content       |          *Long Cell*        ||
+Content       |   **Cell**    |         Cell |
+
+New section   |     More      |         Data |
+And more      |            And more          ||
 
 ## Conclusion
 
