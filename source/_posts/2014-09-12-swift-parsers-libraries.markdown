@@ -99,7 +99,7 @@ Conveniently, Xcode will parse headers with enumerations declared with the ```NS
 		LibXMLReaderTypeXML_DECLARATION = XML_READER_TYPE_XML_DECLARATION
 	};
 
-This is a redeclaration of libxml enum types, with a naming convention that works well in Swift:
+This is a redeclaration of libxml enum values, [with a naming convention that will play nice with Swift](https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/BuildingCocoaApps/InteractingWithCAPIs.html#//apple_ref/doc/uid/TP40014216-CH8-XID_13):
 
 	switch LibXMLDOMGetElementType(child) {
 	case .ELEMENT_NODE:
@@ -380,7 +380,6 @@ I hope you've enjoyed this series of posts, I'd love to hear your thoughts and c
 --- 
 
 [^nsxmlparser]: [NSXMLParser](https://developer.apple.com/library/mac/documentation/cocoa/reference/foundation/classes/nsxmlparser_class/reference/reference.html) has been part of Cocoa for many years now and would also be suitable, however it only implements an event-based ```SAX```-style interface. While it is certainly possible to make a ```XMLParserType``` implementation using NSXMLParser, I won't consider it for now.
-
 
 [^dom-performance]: I cut my programming teeth on Java. When consuming an XML Document of greater than a MB or so the JVM Heap could get hammered when using a DOM style parser. This could be hugely problematic when intertwined with a Garbage Collector. I wonder if the ubiquity of JSON Parsers that output to a fully reified Data Structure, rather than Event Based parsers has anything to do with the increased availability of resources since JSON came into vogue.
 
