@@ -375,7 +375,7 @@ The results prove that the performance characteristics of different implementati
 
 I'd probably opt to use 'Implementation 3', which wraps the original ```libxml``` DOM in the ```XMLParsableType``` protocol. It is by far the simplest and has very good performance. Even when resources are at a premium it can be better to opt for the simpler solution, even if it means sacrificing a little performance. Maintainability and understandability are important qualities in code, so that the code can be revisited and revised by others and understandable for years to come. As 'Implementation 3' is the most performant and simplest to implement, hard to argue that it is the one to go for!
 
-I hope you've enjoyed this series of posts, I'd love to hear your thoughts and comments!
+I hope you've enjoyed this series of posts, I'd love to hear your thoughts and comments! I'm [@insertjokehere on Twitter](https://twitter.com/insertjokehere/) & [lawrencelomax on GitHub](https://github.com/lawrencelomax).
 
 --- 
 
