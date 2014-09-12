@@ -3,7 +3,7 @@ layout: post
 title: "Swift Parsers - Libraries"
 date: 2014-09-12 22:30:03 +0100
 comments: true
-published: false
+published: true
 categories:
 - Functional
 - Swift
@@ -47,7 +47,7 @@ The [Reader Interface](http://xmlsoft.org/xmlreader.html) is very similar to the
 
 ## Swift Implementation
 
-With a little context to the types of parsing interfaces that are available in ```libxml2```, it help us to understand how they can be used in Swift.
+With a little context to the types of parsing interfaces that are available in ```libxml2```, it help us to understand how they can be used in Swift. All of the implementations of the interface will return a [```Result<XMLParsableType>```](https://github.com/lawrencelomax/XMLParsable/blob/master/XMLParsable/XML/XMLNavigatingParser.swift#L12) of the root node in the XML Document, with the XML Document read from either a [File or an ```NSData``` representation of document String](https://github.com/lawrencelomax/XMLParsable/blob/master/XMLParsable/XML/XMLNavigatingParser.swift#L13).
 
 ### C Structures in Swift
 
@@ -357,24 +357,24 @@ One of the great aspects of building an XML Parser in this way is that the imple
 
 The correctness testing is relatively simple, just run the same suite of tests over a fixed XML resource and verify that all of the properties in the Model are set to the values in the resource.
 
+{% img right /images/posts/swift_parsers/unit_results.png "Unit Test Results: Great Success" "Unit Test Results: Great Success" %}
+
 XCode 6 makes performance testing easy too. The same XML parse to Model decode task can be stuck inside a [measurement block](https://developer.apple.com/library/prerelease/ios/documentation/DeveloperTools/Conceptual/testing_with_xcode/testing_3_writing_test_classes/testing_3_writing_test_classes.html#//apple_ref/doc/uid/TP40014132-CH4-SW8) and repeated a number of times to eliminate any performance fluctuations of the test host. The Performance Tests should be designed in such a way that they can expose some the performance characteristics of each implementation with a different data set. One of these characteristics is that the amount of unused or redundant data in a document can massively impact performance.
 
-The small suite of performance tests in [```XMLParsable```](https://github.com/lawrencelomax/XMLParsable/blob/master/XMLParsableTests/Performance/XMLPerformanceTests.swift) test the same source data on each of the implementations on a number of axis, using Data vs. using Files and a small XML file vs. an XML file with a lot of redundant data.
+The small suite of performance tests in [```XMLParsable```](https://github.com/lawrencelomax/XMLParsable/blob/master/XMLParsableTests/Performance/XMLPerformanceTests.swift) test the same source data on each of the implementations on a number of axis, using ```NSData``` vs. using Files and a small XML file vs. an XML file with a lot of redundant data:
 
-|             |          Grouping           ||
-First Header  | Second Header | Third Header |
- ------------ | :-----------: | -----------: |
-Content       |          *Long Cell*        ||
-Content       |   **Cell**    |         Cell |
+{% img right /images/posts/swift_parsers/performance_results.png "Performance Results" "Performance Results" %}
 
-New section   |     More      |         Data |
-And more      |            And more          ||
+Some observations from the results:
+
+- There isn't a huge difference between ```NSData``` and reading from a file. This suggests that File I/O isn't much of a bottlekneck.
+- 
 
 ## Conclusion
 
-The results prove that there can be drastically different performance just by using different methodologies. Avoiding unecessary allocatons by transforming data into another form results in by far the best performance, especially as the data set increases. I think this must have a lot to do with the difference in allocation costs in Swift relative to ```libxml2``` in terms of constructing ```String```s and collections. This gap is small when the XML Document is small, as the document size increases the cost of building a ```Swift``` data structure becomes significant.
+The results prove that the performance characteristics of different implemenations of an XML Parser can be exposed when using different data sets. The small gap in performance between implementations widens as the size of the document increases. This is likely due to the cost of object and structure allocations. Reducing allocations in ```libxml2``` or Swift will squeezes out more performance. 
 
-The majority of this code was written with an Application in mind. I didn't have long at all (in fact I wasn't even close to having the right amount of time). I was working on an iOS App that would show the fastest train home (not necessarily the next train) to help out commuters decide which train would give them the most time at the office and at home [_(I'm about to become one of these people)_](https://www.google.co.uk/maps/dir/Coventry,+United+Kingdom/London+Euston,+United+Kingdom/@51.9631488,-1.3744911,9z/data=!3m1!4b1!4m14!4m13!1m5!1m1!1s0x48774bae1512f593:0x9881aa5f47d741c1!2m2!1d-1.51345!2d52.400828!1m5!1m1!1s0x48761b25a93c9b83:0xdbced150c2761d8f!2m2!1d-0.133898!2d51.528136!3e3). Regardless, the code is [available on GitHub to pick apart and prod]().
+I hope you've enjoyed this series of posts, I'd love to hear your thoughts and comments!
 
 --- 
  

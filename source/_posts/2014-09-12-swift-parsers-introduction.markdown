@@ -49,7 +49,7 @@ However there are other ways of constructing and building Applications, using Ab
 
 Let's take a look at the how we can go about one component within an Application in Swift, Parsing.
 
-I'm defining 'Parsing' to be the process of extracting data from [Data Serialization format](http://en.wikipedia.org/wiki/Comparison_of_data_serialization_formats) such as XML or JSON, to a native Model structure, valid and usable by the rest of the Application[^monadic-parser]. The Parser itself can have some or all of the following requirements:
+I'm defining 'Parsing' to be the process of extracting data from [Data Serialization format](http://en.wikipedia.org/wiki/Comparison_of_data_serialization_formats) such as XML or JSON, to a native Model structure, valid and usable by the rest of the Application. The Parser itself can have some or all of the following requirements:
 
 1. Check that a Value exists for a given Key at the current level, or navigate the Data to a deeper level.
 2. Distinguish between a terminal value in the Data Serialization itself versus the value not existing at all. A ```null``` value in a JSON needs to be represented in a distinct way to a value not existing at all. 

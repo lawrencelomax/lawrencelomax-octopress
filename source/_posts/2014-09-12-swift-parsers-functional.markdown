@@ -252,8 +252,6 @@ Thanks for Reading! I suggest reading [some other brilliant posts](http://robnap
 
 [^model-mapping-traditional]: I certainly remember writing this kind of thing by hand, before [Java annotations could be used for Code Generation](http://docs.oracle.com/javase/tutorial/jaxb/intro/).
 
-[^monadic-parser]: The concept of a 'Parser' as a distinct type that implements the 'Monad' Typeclass [does indeed exist in Pure functional language](http://eprints.nottingham.ac.uk/223/1/pearl.pdf).
-
 [^constructor-factory-method]: 'Factory Method' is probably a better term for this since a 'Constructor' is a term reserved to ```init``` methods in Swift. 
 
 [^nested-branching]: It would look [something like this](https://gist.github.com/lawrencelomax/00ea2c00c9b6ca5bb4ab)
