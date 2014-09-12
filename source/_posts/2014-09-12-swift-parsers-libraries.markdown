@@ -29,7 +29,7 @@ If I were to build these interfaces in an Application I'd want to be cautious to
 
 ### DOM
 
-A DOM or Tree Interface to XML represents all of the Elements within an XML Document as a tree of connected nodes. This often means that the whole of an XML Document is read into memory and is navigible by following relationships in a data strucure. By exposing the XML Document as a fully realized data structure, a DOM Interface very convenient to navigate.
+A [DOM (Document Obect Model) or Tree Interface](http://en.wikipedia.org/wiki/Document_Object_Model) to XML represents all of the Elements within an XML Document as a tree of connected nodes. This often means that the whole of an XML Document is read into memory and is navigible by following relationships in a data strucure. By exposing the XML Document as a fully realized data structure, a DOM Interface very convenient to navigate.
 
 By loading all parts of the XML Document into memory the memory usage is proportional to the size of the XML Document. This will be a low cost for small documents, but for larger documents this can result in a substantial amount of memory to allocate[^dom-performance]. 
 
@@ -37,13 +37,17 @@ The performance of a DOM parser relative to others is largely dependent on the n
 	
 ### SAX
 
-An E
+As a DOM interface requires that the whole Tree of Elements is in memory an interface to XML exists that streams data out of the document on a per-Node basis. The [SAX](http://en.wikipedia.org/wiki/Simple_API_for_XML) interface traverses all of the nodes in sequence, allowing data to be extracted from a Stream of callbacks. This means that the entirety of the document doesn't have to be in memory in order to read a document. This can be very desirable in resource constrained environments, or when the document to be parsed is very large.
+
+Unfortunately, this comes with drawbacks. The immediate concern for this article is that a callback based interface can be inconvenient as it results in temporary state being created for book-keeping purposes. A data-structure approach may be able to store all of the bookkeeping information in local variables and function arguments, resulting in simpler implementations that use the recursion and the call stack instead of allocated data structures.
 
 ### Reader
 
+The [Reader Interface](http://xmlsoft.org/xmlreader.html) is very similar to the SAX interface, with a Cursor based way of traversing the tree, rather than callbacks. This makes the interface significantly easier to work with than SAX.
+
 ## Swift Implementation
 
-With a little context to the types of parsing interfaces that are available, it should be easier to understand how their APIs will operate and how they can be used in Swift.
+With a little context to the types of parsing interfaces that are available in ```libxml2```, it help us to understand how they can be used in Swift.
 
 ### C Structures in Swift
 
@@ -64,13 +68,15 @@ For example, this function will extract the `content` member from a Node:
 		return [NSString stringWithCString:name encoding:NSUTF8StringEncoding];
 	}
 
+These functions can then be used in Swift when they are exposed in an [Umbrella or Bridging Header](https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/BuildingCocoaApps/MixandMatch.html).
+
 ### GOTO Swift
 
-I like to follow a principle when developing software, regardless of the language:
+I like to follow a principle when developing software, regardless of the languages and frameworks used:
 
 > _"Get to the highest level of Abstraction that makes sense, as early as possible. Don't think about the overhead of the abstration until you can prove that it is detrimental to performance"_
 
-```libxml2``` sits very far down the ladder of Abstraction, when working with it in Swift best practice will be pull data out of C structures and into Swift native ones as early as possible. This means skipping Objective-C[^string-nsstring] and using elements of the Swift Standard Library to consume data. Swift provides us with some abstractions that are superior to the Objective-C equivalents, there's no need for an intermediate stage unless it is needed.
+```libxml2``` sits very far down the ladder of Abstraction, so I consider it to be ideal to pull data from ```libxml2``` into a higher level of abstraction as soon as possible. This makes manipulating and reading XML data in Swift significantly easier. Additionally, this means skipping Objective-C[^string-nsstring] and using elements of the [Swift Standard Library](http://swifter.natecook.com) along with bridged Cocoa libraries to get stuff done. Swift provides us with some abstractions that are superior to the Objective-C equivalents, there's no need for an intermediate stage unless it is needed. The Strong guarantees that Swift provides us are also present in the components of the Standard Library.
 
 Conveniently, XCode will parse headers with enumerations declared with the ```NS_ENUM``` macro:
 
@@ -106,7 +112,7 @@ This is a redeclaration of libxml enum types, with a naming convention that work
 		break
 	}
 
-Swift provides the ```SequenceType``` and ```GeneratorType``` protocols to allow us to use the ```for ... in ...``` syntax, or use the higher-level ```map```, ```search``` and ```filter``` functions. We can define a ```Sequence``` type for the Child nodes of an XML Node:
+Swift provides the [```SequenceType```](http://swifter.natecook.com/protocol/SequenceType/) and [```GeneratorType```](http://swifter.natecook.com/protocol/GeneratorType/) protocols to allow us to use the ```for ... in ...``` syntax, or use the higher-level [```map```](http://swifter.natecook.com/func/map/), [```find```](http://swifter.natecook.com/func/find/) and [```filter```](http://swifter.natecook.com/func/filter/) functions. We can define a ```Sequence``` type that exposes the Child nodes of an XML Node:
 
 	typealias LibXMLDOMNodeSequence = SequenceOf<xmlNodePtr>
 	
@@ -129,7 +135,7 @@ By moving enumeration to a  ```Sequence``` type, consumers of the DOM don't need
 
 ## Implementation 1: Swift Structure from libxml2 DOM
 
-The first thing that springs to mind is that given a DOM in ```libxml```, some of the Data can be pulled out into a pure Swift data structure[^class-vs-struct]. This Swift data structure will contain all of the relationships and Text Nodes, whilst implementing the previously defined ```XMLParsableType```.
+The first thing that springs to mind is that given a DOM in ```libxml```, some of the data can be pulled out into a pure Swift data structure[^class-vs-struct]. This Swift data structure will contain all of the relationships and Text Nodes, whilst implementing the previously defined ```XMLParsableType```.
 
 	public final class XMLNode: XMLParsableType {
 		public let name: String
