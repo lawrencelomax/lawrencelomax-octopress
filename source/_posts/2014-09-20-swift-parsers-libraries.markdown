@@ -53,16 +53,16 @@ Direct access of C structure members is not permitted in Swift as Swift does not
 
 For example, this function will extract the `content` member from a Node:
 
-	 NSString * LibXMLDOMGetText(xmlNodePtr node)
-	 {
-	   NSCParameterAssert(node != NULL);
-	   NSCParameterAssert(node->type == XML_TEXT_NODE);
-	   	
-	   const char *name = (const char *) node->content;
-	   NSCParameterAssert(name != NULL);
-	   
-	   return [NSString stringWithCString:name encoding:NSUTF8StringEncoding];
-	 }
+	NSString * LibXMLDOMGetText(xmlNodePtr node)
+	{
+		NSCParameterAssert(node != NULL);
+		NSCParameterAssert(node->type == XML_TEXT_NODE);
+		
+		const char *name = (const char *) node->content;
+		NSCParameterAssert(name != NULL);
+		
+		return [NSString stringWithCString:name encoding:NSUTF8StringEncoding];
+	}
 
 ### GOTO Swift
 
@@ -75,36 +75,36 @@ I like to follow a principle when developing software, regardless of the languag
 Conveniently, XCode will parse headers with enumerations declared with the ```NS_ENUM``` macro:
 
 	typedef NS_ENUM(NSInteger, LibXMLReaderType) {
-	  LibXMLReaderTypeNONE = XML_READER_TYPE_NONE,
-	  LibXMLReaderTypeELEMENT = XML_READER_TYPE_ELEMENT,
-	  LibXMLReaderTypeATTRIBUTE = XML_READER_TYPE_ATTRIBUTE,
-	  LibXMLReaderTypeTEXT = XML_READER_TYPE_TEXT,
-	  LibXMLReaderTypeCDATA = XML_READER_TYPE_CDATA,
-	  LibXMLReaderTypeENTITY_REFERENCE = XML_READER_TYPE_ENTITY_REFERENCE,
-	  LibXMLReaderTypeENTITY = XML_READER_TYPE_ENTITY,
-	  LibXMLReaderTypePROCESSING_INSTRUCTION = XML_READER_TYPE_PROCESSING_INSTRUCTION,
-	  LibXMLReaderTypeCOMMENT = XML_READER_TYPE_COMMENT,
-	  LibXMLReaderTypeDOCUMENT = XML_READER_TYPE_DOCUMENT,
-	  LibXMLReaderTypeDOCUMENT_TYPE = XML_READER_TYPE_DOCUMENT_TYPE,
-	  LibXMLReaderTypeDOCUMENT_FRAGMENT = XML_READER_TYPE_DOCUMENT_FRAGMENT,
-	  LibXMLReaderTypeNOTATION = XML_READER_TYPE_NOTATION,
-	  LibXMLReaderTypeWHITESPACE = XML_READER_TYPE_WHITESPACE,
-	  LibXMLReaderTypeSIGNIFICANT_WHITESPACE = XML_READER_TYPE_SIGNIFICANT_WHITESPACE,
-	  LibXMLReaderTypeEND_ELEMENT = XML_READER_TYPE_END_ELEMENT,
-	  LibXMLReaderTypeEND_ENTITY = XML_READER_TYPE_END_ENTITY,
-	  LibXMLReaderTypeXML_DECLARATION = XML_READER_TYPE_XML_DECLARATION
+		LibXMLReaderTypeNONE = XML_READER_TYPE_NONE,
+		LibXMLReaderTypeELEMENT = XML_READER_TYPE_ELEMENT,
+		LibXMLReaderTypeATTRIBUTE = XML_READER_TYPE_ATTRIBUTE,
+		LibXMLReaderTypeTEXT = XML_READER_TYPE_TEXT,
+		LibXMLReaderTypeCDATA = XML_READER_TYPE_CDATA,
+		LibXMLReaderTypeENTITY_REFERENCE = XML_READER_TYPE_ENTITY_REFERENCE,
+		LibXMLReaderTypeENTITY = XML_READER_TYPE_ENTITY,
+		LibXMLReaderTypePROCESSING_INSTRUCTION = XML_READER_TYPE_PROCESSING_INSTRUCTION,
+		LibXMLReaderTypeCOMMENT = XML_READER_TYPE_COMMENT,
+		LibXMLReaderTypeDOCUMENT = XML_READER_TYPE_DOCUMENT,
+		LibXMLReaderTypeDOCUMENT_TYPE = XML_READER_TYPE_DOCUMENT_TYPE,
+		LibXMLReaderTypeDOCUMENT_FRAGMENT = XML_READER_TYPE_DOCUMENT_FRAGMENT,
+		LibXMLReaderTypeNOTATION = XML_READER_TYPE_NOTATION,
+		LibXMLReaderTypeWHITESPACE = XML_READER_TYPE_WHITESPACE,
+		LibXMLReaderTypeSIGNIFICANT_WHITESPACE = XML_READER_TYPE_SIGNIFICANT_WHITESPACE,
+		LibXMLReaderTypeEND_ELEMENT = XML_READER_TYPE_END_ELEMENT,
+		LibXMLReaderTypeEND_ENTITY = XML_READER_TYPE_END_ENTITY,
+		LibXMLReaderTypeXML_DECLARATION = XML_READER_TYPE_XML_DECLARATION
 	};
 
 This is a redeclaration of libxml enum types, with a naming convention that works well in Swift:
 
-	  switch LibXMLDOMGetElementType(child) {
-	  case .ELEMENT_NODE:
-	    children.append(LibXMLNodeParserDOM.createTreeRecursive(child))
-	  case .TEXT_NODE:
-	    text = LibXMLDOMGetText(child)
-	  default:
-	    break
-	  }
+	switch LibXMLDOMGetElementType(child) {
+	case .ELEMENT_NODE:
+		children.append(LibXMLNodeParserDOM.createTreeRecursive(child))
+	case .TEXT_NODE:
+		text = LibXMLDOMGetText(child)
+	default:
+		break
+	}
 
 Swift provides the ```SequenceType``` and ```GeneratorType``` protocols to allow us to use the ```for ... in ...``` syntax, or use the higher-level ```map```, ```search``` and ```filter``` functions. We can define a ```Sequence``` type for the Child nodes of an XML Node:
 
@@ -113,14 +113,13 @@ Swift provides the ```SequenceType``` and ```GeneratorType``` protocols to allow
 	internal class func childrenOfNode(node: xmlNodePtr) -> LibXMLDOMNodeSequence {
 		var nextNode = LibXMLDOMGetChildren(node)
 		let generator: GeneratorOf<xmlNodePtr> = GeneratorOf {
-		  if (nextNode == nil) {
-		    return nil
-		  }
-	  	
-		  let currentNode = nextNode
-		  nextNode = LibXMLDOMGetSibling(nextNode)
-	  	
-		  return currentNode
+			if (nextNode == nil) {
+				return nil
+			}
+		
+			let currentNode = nextNode
+			nextNode = LibXMLDOMGetSibling(nextNode) 
+			return currentNode
 		}
 		
 		return SequenceOf(generator)
@@ -133,25 +132,25 @@ By moving enumeration to a  ```Sequence``` type, consumers of the DOM don't need
 The first thing that springs to mind is that given a DOM in ```libxml```, some of the Data can be pulled out into a pure Swift data structure[^class-vs-struct]. This Swift data structure will contain all of the relationships and Text Nodes, whilst implementing the previously defined ```XMLParsableType```.
 
 	public final class XMLNode: XMLParsableType {
-	  public let name: String
-	  public let text: String?
-	  public let children: [XMLNode]
-	  
-	  init (name: String, text: String?, children: [XMLNode]) {
-	    self.name = name
-	    self.text = text
-	    self.children = children
-	  }
-    
-	  public func parseChildren(childTag: String) -> [XMLNode] {
-	    return self.children.filter { node in
-	      return node.name == childTag
-	    }
-	  }
-	  
-	  public func parseText() -> String? {
-	    return self.text
-	  }
+		public let name: String
+		public let text: String?
+		public let children: [XMLNode]
+		
+		init (name: String, text: String?, children: [XMLNode]) {
+			self.name = name
+			self.text = text
+			self.children = children
+		}
+		
+		public func parseChildren(childTag: String) -> [XMLNode] {
+			return self.children.filter { node in
+				return node.name == childTag
+			}
+		}
+		
+		public func parseText() -> String? {
+			return self.text
+		}
 	}
 
 The ```childrenOfNode``` function is placed in the ```LibXMLDOM``` class to separate the concerns of how the Tree is built into a data structure and how the DOM is navigated. By using this function that returns a  ```Sequence`` and a number of other wrapper functions (prefixed with ```LibXMLDOM```) returning Swift types, the construction of the tree can be defined recusively:
@@ -180,9 +179,111 @@ That's pretty much it, there's a little more in terms of plumbing and error hand
 
 ## Attempt 2: Swift Structure from libxml2 Buffered Reader
 
-On reflection, this sounds like the XML Document is built twice. Once to read the document into ```libxml2``` and second to extract out the Text Nodes and Element Names into a Tree. This transformation could potentially be costly so there might be a performance benefit to only building the tree once.
+On reflection, this means that the XML Document is built twice. Once to read the document into ```libxml2``` and the second to extract out the Text Nodes and Element Names into a Tree of Swift data structures. The costs of allocating a bunch of Swift structures could potentially be significant so there will likely be a performance benefit to only building the tree once.
 
-The Reader interface for ```libxml2``` is an interface to the XML document that will incrementally read each part of the document in a depth-first fashion. A Node is read by asking the Reader for the next 
+[The Reader interface for ```libxml2```](http://xmlsoft.org/xmlreader.html) is an interface to the XML document that will incrementally read each component of the document in a depth-first fashion. The Current Node is repeatedly advanced by calling the [```xmlTextReaderRead```](http://xmlsoft.org/html/libxml-xmlreader.html#xmlTextReaderRead) function until the End of the File has been reached, or an Error has occured in parsing. Using the Reader, a Swift Data structure can be built without having to create a DOM in ```libxml2```
+
+A Lazy ```Sequence``` of nodes can be made for the [Reader interface](http://xmlsoft.org/xmlreader.html) in the same way as the [Tree interface](http://xmlsoft.org/html/libxml-tree.html). The ```Sequence``` is made from the more fundemental ```Generator```:
+
+	internal typealias ReaderGenerator = GeneratorOf<(xmlTextReaderPtr, LibXMLReaderMode)>
+	
+	private class func makeRecursiveGenerator(reader: xmlTextReaderPtr) -> ReaderGenerator {
+		return GeneratorOf {
+			if reader == nil {
+				return nil
+			}
+		
+			let result = LibXMLReaderMode.forceMake(xmlTextReaderRead(reader))
+			switch result {
+			case .CLOSED: return nil
+			case .EOF: return nil
+			case .ERROR: return nil
+			case .INITIAL: return nil
+			default: return (reader, result)
+			}
+		}
+	}
+
+With the Reader approach, an error can occur at any time and therefore needs to be handled during the reading process. This is passed back in a tuple of both the pointer to the current node and the status of the read operation. It is then wrapped in a Sequence for the Higher-Order operations and the pointer must be advanced one time on the first read:
+
+	internal typealias ReaderSequence = SequenceOf<(xmlTextReaderPtr, LibXMLReaderMode)>
+	private class func wrapInSequence(reader: xmlTextReaderPtr) -> Result<ReaderSequence> {
+		if (reader == nil) {
+			return Result.Error(self.error("Could Not Parse Document, no root node"))
+		}
+	
+		var generator = LibXMLReader.makeRecursiveGenerator(reader)
+		if generator.next() == nil {
+			xmlFreeTextReader(reader)
+			return Result.Error(self.error("Could Not Parse Document, no first node"))
+		}
+	
+		return Result.value(SequenceOf(generator))
+	}
+
+In the ```LibXMLReader``` class, a ```Context``` class is created to dispose the manually memory managed ```libxml``` structures:
+
+	internal final class LibXMLReader {
+		internal struct Context {
+			let reader: xmlTextReaderPtr
+			let sequence: ReaderSequence
+			var hasFreed: Bool
+			
+			init (reader: xmlTextReaderPtr, sequence: ReaderSequence) {
+				self.reader = reader
+				self.sequence = sequence
+				self.hasFreed = false
+			}
+			
+			func dispose() {
+				if !self.hasFreed {
+					xmlFreeTextReader(self.reader)
+				}
+			}
+	}
+
+The Tree can be built up using a Recursive function, passing through the ```ReaderSequence```
+
+
+	private class func parseRecursive(reader: xmlTextReaderPtr, _ sequence: ReaderSequence) -> Result<XMLNode> {
+			if LibXMLReaderType.forceMake(reader) != .ELEMENT {
+				let realType = LibXMLReaderGetElementTypeString(LibXMLReaderType.forceMake(reader))
+				return Result.Error(LibXMLReader.error("Recursive Node Parse Requires an ELEMENT, got \(realType)"))
+			}
+			
+			var name = LibXMLReaderGetName(reader)
+			var text: String?
+			var children: [XMLNode] = []
+			
+			if LibXMLReaderIsEmpty(reader) {
+				return Result.value(XMLNode(name: name, text: text, children: children))
+			}
+			
+			for (reader, mode) in sequence {
+				let type = LibXMLReaderType.forceMake(xmlTextReaderNodeType(reader))
+				let typeString = LibXMLReaderGetElementTypeString(type)
+				let modeString = LibXMLReaderGetReaderMode(mode)
+			
+			switch type {
+				case .TEXT:
+					text = LibXMLReaderGetText(reader);
+				case .ELEMENT:
+					let childResult = self.parseRecursive(reader, sequence)
+						switch childResult {
+							case .Error(let error): return childResult
+							case .Value(let box): children.append(childResult.toOptional()!)
+						}
+				case .END_ELEMENT:
+					assert(name == LibXMLReaderGetName(reader), "BEGIN AND END NOT MATCHED")
+					return Result.value(XMLNode(name: name, text: text, children: children))
+				default:
+				break
+			}
+		}
+		
+		return Result.Error(LibXMLReader.error("I don't know how this became exhausted, unbalanced begin and end of document"))
+	}
+
 
 ## Attempt 3: Navigate the libxml2 DOM with Swift
 
@@ -191,55 +292,55 @@ The Building of the tree as a fully realized structure is a Simple implementatio
 There's no reason that we can't just wrap the whole ```libxml2``` Tree structure in a Class implementing ```XMLParsableType``` that knows how to fetch the Text and Children of an Element.
 
 	public final class LibXMLNavigatingParserDOM: XMLNavigatingParserType, XMLParsableType {
-	  private let node: xmlNodePtr
-	  private let context: LibXMLDOM.Context?
-	  
-	  internal init (node: xmlNodePtr) {
-	    self.node = node
-	  }
-	  
-	  internal init (context: LibXMLDOM.Context) {
-	    self.context = context
-	    self.node = context.rootNode
-	  }
-	  
-	  deinit {
-	    self.context?.dispose()
-	  }
-	  
-	  public func parseChildren(childTag: String) -> [LibXMLNavigatingParserDOM] {
-	    let foundChildren = filter(LibXMLDOM.childrenOfNode(self.node)) { node in
-	      LibXMLDOMGetElementType(node) == LibXMLElementType.ELEMENT_NODE && LibXMLDOMElementNameEquals(node, childTag)
-	    }
-	    return foundChildren.map { LibXMLNavigatingParserDOM(node: $0) }
-	  }
-	  
-	  public func parseText() -> String? {
-	    let foundChild = findSeq(LibXMLDOM.childrenOfNode(self.node)) { node in
-	      return LibXMLDOMGetElementType(node) == LibXMLElementType.TEXT_NODE
-	    }
-	    return foundChild >>- LibXMLDOMGetText
-	  }  
+		private let node: xmlNodePtr
+		private let context: LibXMLDOM.Context?
+		
+		internal init (node: xmlNodePtr) {
+			self.node = node
+		}
+		
+		internal init (context: LibXMLDOM.Context) {
+			self.context = context
+			self.node = context.rootNode
+		}
+		
+		deinit {
+			self.context?.dispose()
+		}
+		
+		public func parseChildren(childTag: String) -> [LibXMLNavigatingParserDOM] {
+			let foundChildren = filter(LibXMLDOM.childrenOfNode(self.node)) { node in
+				LibXMLDOMGetElementType(node) == LibXMLElementType.ELEMENT_NODE && LibXMLDOMElementNameEquals(node, childTag)
+			}
+			return foundChildren.map { LibXMLNavigatingParserDOM(node: $0) }
+		}
+		
+		public func parseText() -> String? {
+			let foundChild = findSeq(LibXMLDOM.childrenOfNode(self.node)) { node in
+				return LibXMLDOMGetElementType(node) == LibXMLElementType.TEXT_NODE
+			}
+			return foundChild >>- LibXMLDOMGetText
+		}
 	}
 
 The ```LibXMLDOM.Context``` is just a internal class responsible for cleaning up the manual-memory-managed ```libxml2``` document when the root node is deallocated:
 
 	internal final class LibXMLDOM {
-	  struct Context {
-	    let document: xmlDocPtr
-	    let rootNode: xmlNodePtr
-    
-	    init (document: xmlDocPtr, rootNode: xmlNodePtr){
-	      self.document = document
-	      self.rootNode = rootNode
-	    }
-    
-	    func dispose() {
-		   if self.rootNode != nil {
-        	xmlFreeDoc(self.document)
-      	   }
-	    }
-	  }
+		struct Context {
+			let document: xmlDocPtr
+			let rootNode: xmlNodePtr
+			
+			init (document: xmlDocPtr, rootNode: xmlNodePtr){
+				self.document = document
+				self.rootNode = rootNode
+			}
+			
+			func dispose() {
+				if self.rootNode != nil {
+					xmlFreeDoc(self.document)
+				}
+			}
+		}
 	}
 
 Still quite a simple implementation, that's about all we need to implement the ```XMLParsableType``` interface. The creation of the Swift Strings for the Text of an Element are deferred until they are actually needed. If nearly all of the Text Elements are consumed when mapping to a model it won't have much (if any) impact on performance relative to the first attempt.
@@ -252,11 +353,15 @@ The DOM parser for ```libxml2``` will have parsed the whole document, elements, 
 
 ## Testing
 
-One of the great aspects of building an XML Parser in this way is that the Implementations are trivial to swap out and can be tested against for correctness against the same Parsing Code. Additionally, we can use the new Performance Testing features of XCode 6 to see what the performance is like for these varying methods.
+One of the great aspects of building an XML Parser in this way is that the implementations are trivial to swap out and can be tested against for correctness against the same Parsing Code. Additionally, we can use the new Performance Testing features of XCode 6 to see how the performance varies in these differing implemenations. The code is all available on [GitHub for your viewing pleasure](http://github.com/lawrencelomax/XMLParsable).
+
+The correctness testing is relatively simple, just run the same suite of tests over a fixed XML resource and verify that all of the properties in the Model are set to the values in the resource.
+
+XCode 6 makes performance testing easy too. The same XML parse to Model decode task can be stuck inside a [measurement block]() and repeated a number of times to eliminate any performance fluctuations of the test host. The Performance Tests should be designed in such a way that they can expose some the performance characteristics of each implementation with a different data set. One of these characteristics is that the amount of unused or redundant data in a document can massively impact performance.
 
 ## Conclusion
 
-The results prove that there can be drastically different performance just by using different methodologies. If you'd like to take a look at the code, it is [available on GitHub]().
+The results prove that there can be drastically different performance just by using different methodologies. Avoiding unecessary allocatons by transforming data into another form results in by far the best performance, especially as the data set increases. I think this must have a lot to do with the difference in allocation costs in Swift relative to ```libxml2``` in terms of constructing ```String```s and collections. This gap is small when the XML Document is small, as the document size increases the cost of building a ```Swift``` data structure becomes significant.
 
 The majority of this code was written with an Application in mind. I didn't have long at all (in fact I wasn't even close to having the right amount of time). I was working on an iOS App that would show the fastest train home (not necessarily the next train) to help out commuters decide which train would give them the most time at the office and at home [_(I'm about to become one of these people)_](https://www.google.co.uk/maps/dir/Coventry,+United+Kingdom/London+Euston,+United+Kingdom/@51.9631488,-1.3744911,9z/data=!3m1!4b1!4m14!4m13!1m5!1m1!1s0x48774bae1512f593:0x9881aa5f47d741c1!2m2!1d-1.51345!2d52.400828!1m5!1m1!1s0x48761b25a93c9b83:0xdbced150c2761d8f!2m2!1d-0.133898!2d51.528136!3e3). Regardless, the code is [available on GitHub to pick apart and prod]().
 
