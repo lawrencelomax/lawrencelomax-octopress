@@ -13,7 +13,7 @@ categories:
 - Backends
 ---
 
-In the [previous post](/blog/2014/09/11/swift-parsers-introduction/) I talked about some of the possible requirements for a Parser that extracts data from a Serialization Format and places it in a Language-Native Model. In this post I'll cover how an XML Parser for a Model Object can be built using some of the familiar Imperative features of Swift. Sample Code is [available on GitHub](http://github.com/lawrencelomax/XMLParsable).
+In the [previous post](/blog/2014/09/12/swift-parsers-introduction/) I talked about some of the possible requirements for a Parser that extracts data from a Serialization Format and places it in a Language-Native Model. In this post I'll cover how an XML Parser for a Model Object can be built using some of the familiar Imperative features of Swift. Sample Code is [available on GitHub](http://github.com/lawrencelomax/XMLParsable).
 
 ### Model and XML
 
@@ -74,7 +74,7 @@ This is simple and immutable, the Parser forms part of the backend for the User 
 
 ### An Interface to XML
 
-Stubbing a Protocol or Interface is a great way of getting to grips with the problem that needs to be solved. It also helps to determine what is necessary for to implement, as well as the details that can be ignored to solve the problem at hand. There is also a bunch of [previously laid out requirements to be considered](/blog/2014/09/11/swift-parsers-introduction/) 
+Stubbing a Protocol or Interface is a great way of getting to grips with the problem that needs to be solved. It also helps to determine what is necessary for to implement, as well as the details that can be ignored to solve the problem at hand. There is also a bunch of [previously laid out requirements to be considered](/blog/2014/09/12/swift-parsers-introduction/) 
 
 In parsing this XML[^hypothetical-xml]. I've made a few assumptions:
 
@@ -94,7 +94,7 @@ With those assumptions in mind, a Protocol for defining how data can be extracte
 
 > _"An XML Parsable has an ordered collection of Child Parsables and may have an associated String of Text"_
 
-Protocols are permitted to have a recursive definition, using the `Self` placeholder type. How and where the underlying XML document is stored is left to the implementing class/struct/enum[^lazy-evaluated-functional-programming]. As we will see in [Part 4](), obtaining a child may be implemented by traversing a fully reified data structure, or moving a cursor partially visible representation of the structure.
+Protocols are permitted to have a recursive definition, using the `Self` placeholder type. How and where the underlying XML document is stored is left to the implementing class/struct/enum[^lazy-evaluated-functional-programming]. As we will see in [Part 4](/blog/2014/09/12/swift-parsers-libraries/), obtaining a child may be implemented by traversing a fully reified data structure, or moving a cursor partially visible representation of the structure.
 
 As well as a representation of the Data Serialization itself, there needs to be a consistent way of defining that a Model can extract out values of Data Serialization. The entry point can be defined in terms of a decode protocol[^decoder-protocols] that the Model structures should implement:
 
@@ -148,7 +148,7 @@ Most importantly is that the nesting is an Imperative way of implementing that t
 
 ### Next Time...
 
-[Next time](/blog/2014/09/11/swift-parsers-functional/), we'll take a Functional approach to the ```decode``` method, allowing us to think at a much higher level about how a Model is built.
+[Next time](/blog/2014/09/12/swift-parsers-functional/), we'll take a Functional approach to the ```decode``` method, allowing us to think at a much higher level about how a Model is built.
 
 [^hypothetical-xml]: These assumptions actually hold true for a [webservice to be consumed](http://www.livedepartureboards.co.uk/ldbws/) in an Application I was prototyping. Depending on the Webservice an Application is consuming, there's a great deal of assumptions that can be made to reduce the complexity of an Implementation.
 

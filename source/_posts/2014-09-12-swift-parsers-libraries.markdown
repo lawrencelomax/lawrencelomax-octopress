@@ -47,7 +47,7 @@ With a little context to the types of parsing interfaces that are available, it 
 
 ### C Structures in Swift
 
-[```libxml2```]()  Open Source implementation of is a C library, the C functions can be imported into Swift using an Bridging Header and used as if they are Swift functions with [usual rules of interacting with C API](https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/BuildingCocoaApps/InteractingWithCAPIs.html#//apple_ref/doc/uid/TP40014216-CH8-XID_11). As Working with the structures requires quite a bit of unwrapping and manupilating 'Unsafe' containers that wrap all C structures in Swift. Again, a strong reason to move up to the Swift level of abstraction.
+[```libxml2```](http://xmlsoft.org)  Open Source implementation of is a C library, the C functions can be imported into Swift using an Bridging Header and used as if they are Swift functions with [usual rules of interacting with C API](https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/BuildingCocoaApps/InteractingWithCAPIs.html#//apple_ref/doc/uid/TP40014216-CH8-XID_11). As Working with the structures requires quite a bit of unwrapping and manupilating 'Unsafe' containers that wrap all C structures in Swift. Again, a strong reason to move up to the Swift level of abstraction.
 
 Direct access of C structure members is not permitted in Swift as Swift does not know about the shape of structures. Any access of structure members will need to be wrapped in C/Objective-C functions and imported in the Bridging Header.
 

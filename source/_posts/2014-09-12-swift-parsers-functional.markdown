@@ -13,13 +13,13 @@ categories:
 - Backends
 ---
 
-In the [previous post](/blog/2014/09/11/swift-parsers-imperative/) we built a ```decode``` function to parse data out from XML and into an ```Animal``` Model using Imperative techniques. This required some efforts in order to satisfy some of the robustness requirements from the [first post](/blog/2014/09/11/swift-parsers-introduction/).
+In the [previous post](/blog/2014/09/12/swift-parsers-imperative/) we built a ```decode``` function to parse data out from XML and into an ```Animal``` Model using Imperative techniques. This required some efforts in order to satisfy some of the robustness requirements from the [first post](/blog/2014/09/12/swift-parsers-introduction/).
 
 In this post we'll cover how we can use Functional Programming techniques on top of the language features of Swift to decode XML to an ```Animal``` model. This post assumes that you are comfortable with the [Parameterized Types and Generics](https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/Swift_Programming_Language/Generics.html#//apple_ref/doc/uid/TP40014097-CH26-XID_278).
 
 ### Thinking Functionally
 
-I'm using the fantastic and lightweight [Swiftz](https://github.com/maxpow4h/swiftz/) for go-to implementations[^swiftz-lightweight] of many [Higher-Order Functions](http://en.wikipedia.org/wiki/Higher-order_function). It also has a great implementation of the [```Result``` type from the previous post]().
+I'm using the fantastic and lightweight [Swiftz](https://github.com/maxpow4h/swiftz/) for go-to implementations[^swiftz-lightweight] of many [Higher-Order Functions](http://en.wikipedia.org/wiki/Higher-order_function). It also has a great implementation of the [```Result``` type from the previous post](/blog/2014/09/12/swift-parsers-imperative/).
 
 One important concept in Functional Programming is that functions can be thought of as [First-Class types](http://en.wikipedia.org/wiki/First-class_function) just like any other variable or constant in code. Objective-C has had blocks for some time now, allowing us to think in terms of passing functions around; assigning a block to a property of a Object. However this isn't the same thing as First-Class functions. Swift allows Functions to be First-Class whilst providing equivalence in functions no matter how they are declared, a [Closure in Swift](https://developer.apple.com/library/prerelease/mac/documentation/Swift/Conceptual/Swift_Programming_Language/Closures.html) is just another kind of function [just like a method](http://oleb.net/blog/2014/07/swift-instance-methods-curried-functions/) or [Free Function](https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/Swift_Programming_Language/Functions.html#//apple_ref/doc/uid/TP40014097-CH10-XID_243). Blocks are no longer the best way of passing around a computation, we can consider the equivalence of functions declared with ```func``` in a Global or Class scope with local Closures:
 
@@ -49,7 +49,7 @@ In this example, the Swiftz [compose operator (•)](https://github.com/maxpow4h
 
 ### Building new Parsers
 
-With the idea of composing functions [without having to declare one](https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/Swift_Programming_Language/Declarations.html#//apple_ref/doc/uid/TP40014097-CH34-XID_598) can be carried over to our problem of decoding XML to a Model;  A specialized Parser function can be made for each of the values that need to be parsed out in the Model. In order to construct an [```Animal``` Model]() three parsers are required, with the values placed into the context of a ```Result``` for failure information:
+With the idea of composing functions [without having to declare one](https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/Swift_Programming_Language/Declarations.html#//apple_ref/doc/uid/TP40014097-CH34-XID_598) can be carried over to our problem of decoding XML to a Model;  A specialized Parser function can be made for each of the values that need to be parsed out in the Model. In order to construct an [```Animal``` Model](https://github.com/lawrencelomax/XMLParsable/blob/master/XMLParsableTests/Fixtures/Zoo.swift#L13) three parsers are required, with the values placed into the context of a ```Result``` for failure information:
 
 	let kindParser: XMLParsableType -> Result<String> = ...
 	let nameParser: XMLParsableType -> Result<String> = ...
@@ -98,7 +98,7 @@ The  ```name``` property of the ```Animal``` model is nested a few XML Elements 
 
 The ```XMLParser.parseChild("name")``` expression evaluates to a function of ```XMLParsableType -> Result<XMLParsableType>``` instead of just a ```Result``` value. We're seeing that currying is being used to create a specialized Parser function for a specific XML element, chained together in a sequence of functions.
 
-This is the heart of Function Composition, with ```Bind``` performing the behaviour of continuing on success, bailing out as soon as an Error occurs. The possibility of failure within any of the sequences of operations is an essential property of this Parser. Previously this was handled by Optional Chaining and ```if``` statements in the [Imperative version](). Using ```>>-``` there isn't a branching statement in sight[^non-optional-guarantees].
+This is the heart of Function Composition, with ```Bind``` performing the behaviour of continuing on success, bailing out as soon as an Error occurs. The possibility of failure within any of the sequences of operations is an essential property of this Parser. Previously this was handled by Optional Chaining and ```if``` statements in the [Imperative version](/blog/2014/09/12/swift-parsers-imperative/). Using ```>>-``` there isn't a branching statement in sight[^non-optional-guarantees].
 
 ### Common Operations
 
@@ -153,7 +153,7 @@ For example, a definition of ```toiletCount``` requires interpreting a ```String
 
 	let toiletCountParser: String -> Result<Int> = { promoteDecodeError("Could not parse 'disabled_parking")(value: Int.parseString($0)) }
 
-Or we can use the [```Compose``` and ```Bind``` Operators again]():
+Or we can use the ```Compose``` and ```Bind``` Operators again:
 
 	let toiletCountParser: String -> Result<Int> = promoteDecodeError("Could not parse 'disabled_parking") • Int.parseString
 	let toiletCount =  XMLParser.parseChildText(["facilities", "toilet"])(xml: xml) >>- toiletCountParser
@@ -236,7 +236,7 @@ Thanks for Reading! I suggest reading [some other brilliant posts](http://robnap
 
 [^associated-types]: They consume a Protocol, abstracting away how the XML Parser is implemented. As the Protocol has an associated type requirement it has to be fulfilled with Generics. Composed behaviours don't pollute the Implementation of the Protocol but still augment the behaviour.
 
-[^xmlparser-implementation]: The Implementation for this class is in the [next post in this series]().
+[^xmlparser-implementation]: The Implementation for this class is in the [next post in this series](/blog/2014/09/12/swift-parsers-libraries/).
 
 [^swiftz-generics-simplification]: I'm lying, I've changed the Generic Parameters from ```VA``` & ```VB``` to ```A``` & ```B```
 
