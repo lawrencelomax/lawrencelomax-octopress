@@ -21,11 +21,9 @@ In this post we're going to take a look at two things:
 
 ## Parser Interfaces
 
-The immensely popular Open Source project [libxml2](http://xmlsoft.org) is a C Framework bundled with iOS and Mac OS X for parsing XML, with no external dependencies. For our interests it has implementations for a number of [XML Reading interfaces](http://en.wikipedia.org/wiki/Java_API_for_XML_Processing). These are the [DOM](http://en.wikipedia.org/wiki/Document_Object_Model), [SAX](http://en.wikipedia.org/wiki/Simple_API_for_XML) and [Reader](http://xmlsoft.org/xmlreader.html) interfaces.
+The immensely popular Open Source project [libxml2](http://xmlsoft.org) is a C Framework bundled with iOS and Mac OS X for parsing XML[^nsxmlparser], with no external dependencies. For our interests it has implementations for a number of [XML Reading interfaces](http://en.wikipedia.org/wiki/Java_API_for_XML_Processing). These are the [DOM](http://en.wikipedia.org/wiki/Document_Object_Model), [SAX](http://en.wikipedia.org/wiki/Simple_API_for_XML) and [Reader](http://xmlsoft.org/xmlreader.html) interfaces.
 
-[NSXMLParser](https://developer.apple.com/library/mac/documentation/cocoa/reference/foundation/classes/nsxmlparser_class/reference/reference.html) has been part of Cocoa for many years now and would also be suitable, however it only implements an event-based ```SAX```-style interface. While it is certainly possible to make a ```XMLParserType``` implementation using NSXMLParser, I won't consider it for now.
-
-If I were to build these interfaces in an Application I'd want to be cautious to not prematurely optimise the XML Document Reading process. Even if there are any substantial gains to XML Parsing performance when building implementations of the ```XMLParsableType```, the gains may not be that significant to the Application as a whole. If the implementations were to be made from scratch it would be worth writing one simple implementation and the swapping it with a more performant implementation if-and-when it is seen to be impacting the performance of the Application at large. However, this is a fun exercise to play with Swift and Xcode 6 as well as getting to grips with the ```libxml2``` library.
+If I were to build these interfaces in an Application I'd want to be cautious to not prematurely optimise the XML Document reading process. Even if there are any substantial gains to XML Parsing performance when building implementations of the ```XMLParsableType```, the gains may not be that significant to the Application as a whole. If the implementations were to be made from scratch it would be worth writing one simple implementation and the swapping it with a more performant implementation if-and-when it is seen to be impacting the performance of the Application at large. However, this is a fun exercise to play with Swift and Xcode 6 as well as getting to grips with the ```libxml2``` library.
 
 ### DOM
 
@@ -33,17 +31,17 @@ A [DOM (Document Object Model) or Tree Interface](http://en.wikipedia.org/wiki/D
 
 By loading all parts of the XML Document into memory the memory usage is proportional to the size of the XML Document. This will be a low cost for small documents, but for larger documents this can result in a substantial amount of memory to allocate[^dom-performance]. 
 
-The performance of a DOM parser relative to others is largely dependent on the number of times that the same DOM is traversed and the amount of ignored data in the DOM. If the DOM is repeatedly traversed, then the up-front cost of building the tree will amortise later navigation of the data structure. However, if there are only a few Elements and Text Nodes that need to be extracted from a Large Document, the resources used to read the unread parts of the tree are wasted.
+The performance of a DOM parser relative to others is largely dependent on the number of times that the same DOM is traversed and the amount of ignored data in the DOM. If the DOM is repeatedly traversed, then the up-front cost of building the tree will amortise later navigation of the data structure. However, if there are only a few Elements and Text nodes that need to be extracted from a large document, the resources used to read the unread parts of the tree are wasted.
 	
 ### SAX
 
-As a DOM interface requires that the whole Tree of Elements is in memory an interface to XML exists that streams data out of the document on a per-Node basis. The [SAX](http://en.wikipedia.org/wiki/Simple_API_for_XML) interface traverses all of the nodes in sequence, allowing data to be extracted from a Stream of callbacks. This means that the entirety of the document doesn't have to be in memory in order to read a document. This can be very desirable in resource constrained environments, or when the document to be parsed is very large.
+As a DOM interface requires that the whole Tree of Elements is in memory an interface to XML exists that streams data out of the document on a per-node basis. The [SAX](http://en.wikipedia.org/wiki/Simple_API_for_XML) interface traverses all of the nodes in sequence, allowing data to be extracted from a stream of callbacks. This means that the entirety of the document doesn't have to be in memory in order to read a document. This can be very desirable in resource constrained environments, or when the document to be parsed is very large.
 
 Unfortunately, this comes with drawbacks. The immediate concern for this article is that a callback based interface can be inconvenient as it results in temporary state being created for book-keeping purposes. A data-structure approach may be able to store all of the bookkeeping information in local variables and function arguments, resulting in simpler implementations that use the recursion and the call stack instead of allocated data structures.
 
 ### Reader
 
-The [Reader Interface](http://xmlsoft.org/xmlreader.html) is very similar to the SAX interface, with a Cursor based way of traversing the tree, rather than callbacks. This makes the interface significantly easier to work with than SAX.
+The [Reader Interface](http://xmlsoft.org/xmlreader.html) is very similar to the SAX interface, with a cursor based way of traversing the tree, rather than callbacks. This can be thought of as the difference between a push and pull driven stream of data. This makes the interface significantly easier to work with than SAX.
 
 ## Swift Implementation
 
@@ -361,23 +359,29 @@ The correctness testing is relatively simple, just run the same suite of tests o
 
 Xcode 6 makes performance testing easy too. The same XML parse to Model decode task can be stuck inside a [measurement block](https://developer.apple.com/library/prerelease/ios/documentation/DeveloperTools/Conceptual/testing_with_xcode/testing_3_writing_test_classes/testing_3_writing_test_classes.html#//apple_ref/doc/uid/TP40014132-CH4-SW8) and repeated a number of times to eliminate any performance fluctuations of the test host. The Performance Tests should be designed in such a way that they can expose some the performance characteristics of each implementation with a different data set. One of these characteristics is that the amount of unused or redundant data in a document can massively impact performance.
 
-The small suite of performance tests in [```XMLParsable```](https://github.com/lawrencelomax/XMLParsable/blob/master/XMLParsableTests/Performance/XMLPerformanceTests.swift) test the same source data on each of the implementations on a number of axis, using ```NSData``` vs. using Files and a small XML file vs. an XML file with a lot of redundant data:
+The small suite of performance tests in [```XMLParsable```](https://github.com/lawrencelomax/XMLParsable/blob/master/XMLParsableTests/Performance/XMLPerformanceTests.swift) test the same source data on each of the implementations on a number of axis, using [```NSData```](https://github.com/lawrencelomax/XMLParsable/blob/master/XMLParsableTests/Fixtures/Fixtures.swift#L25) vs. [using Files](https://github.com/lawrencelomax/XMLParsable/blob/master/XMLParsableTests/Fixtures/Fixtures.swift#L21) and a [small XML file](https://github.com/lawrencelomax/XMLParsable/blob/master/XMLParsableTests/Fixtures/zoo.xml) vs. an [XML file with a lot of redundant data](https://github.com/lawrencelomax/XMLParsable/blob/master/XMLParsableTests/Fixtures/zoo_highredundancy.xml):
 
 {% img right /images/posts/swift_parsers/performance_results.png "Performance Results" "Performance Results" %}
 
 Some observations from the results:
 
-- There isn't a huge difference between ```NSData``` and reading from a file. This suggests that File I/O isn't much of a bottleneck.
-- 
+- There isn't a huge difference between ```NSData``` and reading from a file. This suggests that File I/O isn't much of a bottleneck. There won't be any noticeable difference between decoding XML from a File, or from ```NSData``` returned from a HTTP request.  
+- When a small XML document is used, there's not much of a performance difference between all of the implementations. There may be some other bottlenecks worth identifying in the system, but the time taken to run 10 iterations is very small. 
+- The two implementations that build a Tree of Nodes in Swift have order-of-magnitude worse performance than the DOM-wrapper in the XML document with lots of redundant data. This highlights the differences in performance between building a pure Swift data structure and keeping the data in ```libxml``` itself. This doesn't make Swift slow by any means, it just highlights the tradeoff of abstractions & safety against raw performance. Moving pointers around a region of purpose-allocated memory will always be faster than a runtime that checks types, reference counts and dereferences pointers across discretely allocated data structures.
 
 ## Conclusion
 
-The results prove that the performance characteristics of different implementations of an XML Parser can be exposed when using different data sets. The small gap in performance between implementations widens as the size of the document increases. This is likely due to the cost of object and structure allocations. Reducing allocations in ```libxml2``` or Swift will squeezes out more performance. 
+The results prove that the performance characteristics of different implementations of an XML Parser can be exposed when using different data sets. The small gap in performance between implementations widens as the size of the document increases. This is likely due to the cost of object and structure allocations. Reducing allocations in ```libxml2``` or Swift will squeezes out more performance.
+
+I'd probably opt to use 'Implementation 3', which wraps the original ```libxml``` DOM in the ```XMLParsableType``` protocol. It is by far the simplest and has very good performance. Even when resources are at a premium it can be better to opt for the simpler solution, even if it means sacrificing a little performance. Maintainability and understandability are important qualities in code, so that the code can be revisited and revised by others and understandable for years to come. As 'Implementation 3' is the most performant and simplest to implement, hard to argue that it is the one to go for!
 
 I hope you've enjoyed this series of posts, I'd love to hear your thoughts and comments!
 
 --- 
- 
+
+[^nsxmlparser]: [NSXMLParser](https://developer.apple.com/library/mac/documentation/cocoa/reference/foundation/classes/nsxmlparser_class/reference/reference.html) has been part of Cocoa for many years now and would also be suitable, however it only implements an event-based ```SAX```-style interface. While it is certainly possible to make a ```XMLParserType``` implementation using NSXMLParser, I won't consider it for now.
+
+
 [^dom-performance]: I cut my programming teeth on Java. When consuming an XML Document of greater than a MB or so the JVM Heap could get hammered when using a DOM style parser. This could be hugely problematic when intertwined with a Garbage Collector. I wonder if the ubiquity of JSON Parsers that output to a fully reified Data Structure, rather than Event Based parsers has anything to do with the increased availability of resources since JSON came into vogue.
 
 For this reason the Event-Based Streaming SAX parser could be used instead, the whole document need not be read into memory at the expense of a more troublesome interface. Eventually a compromise was found with the StAX parser, buffering the input document with a Cursorable navigation mechanism.
