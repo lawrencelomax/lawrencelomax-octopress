@@ -13,7 +13,7 @@ categories:
 - Backends
 ---
 
-In the previous posts in this series the Parsers have used a hypothetical ```XMLParsableType``` Protocol for fetching data from an XML Element. I previously mentioned that there are myriad libraries and methods for parsing an XML document for iOS. All of the code in this article and previous articles [is available on GitHub](http://github.com/lawrencelomax/XMLParsable).
+In the previous posts in this series the Parsers have used a hypothetical ```XMLParsableType``` Protocol for fetching data from an XML Element. I previously mentioned that there are myriad libraries and methods for parsing an XML document for iOS. All of the code in this article and covered in previous articles [is available on GitHub](http://github.com/lawrencelomax/XMLParsable).
 
 In this post we're going to take a look at two things: 
 1. How ```XMLParsableType``` can be implemented using ```libxml2```. 
@@ -219,7 +219,7 @@ With the Reader approach, an error can occur at any time and therefore needs to 
 		return Result.value(SequenceOf(generator))
 	}
 
-In the ```LibXMLReader``` class, a ```Context``` class is created to dispose the manually memory managed ```libxml``` structures:
+In the ```LibXMLReader``` class, a ```Context``` class is used as a container to hide the details of the interface between Swift and ```libxml```. This is all wrapped up in a structure[^struct-multiple-return] containing a Reader pointer and a Sequence which will advance the Reader as it is consumed. It also has a ```dispose``` method for resource cleanup of the manually memory managed ```libxml``` structures. Note that there should only be one ```Context``` per reader to avoid multiple freeing of the Reader:
 
 	internal final class LibXMLReader {
 		internal struct Context {
@@ -321,7 +321,7 @@ There's no reason that we can't just wrap a whole ```libxml2``` Tree structure i
 		}
 	}
 
-The ```LibXMLDOM.Context``` is just a internal class responsible for cleaning up the manual-memory-managed ```libxml2``` DOM document when the root node is deallocated:
+The ```LibXMLDOM.Context``` is just a internal class responsible for cleaning up the manual-memory-managed ```libxml2``` DOM document when the root node is deallocated. Again, there is only one ```Context``` per Reader:
 
 	internal final class LibXMLDOM {
 		struct Context {
@@ -385,6 +385,8 @@ I hope you've enjoyed this series of posts, I'd love to hear your thoughts and c
 
 For this reason the Event-Based Streaming SAX parser could be used instead, the whole document need not be read into memory at the expense of a more troublesome interface. Eventually a compromise was found with the StAX parser, buffering the input document with a Cursorable navigation mechanism.
  
-[^class-vs-struct]: This is the perfect candidate for usage of a ```struct``` instead of a ```class```. We don't need for this to be subclassed, or any disposal semantics in ```dealloc```. Reference counting is totally unnecessary as this structure represents an Immutable value. I'd love to take a look at the performance of passing structs around, [it looks like Array and Dictionary struct types use copy-on-write](https://devforums.apple.com/message/990361#990361) but I have no idea if this applies to User defined structs. [Andy Matuschak](http://www.objc.io/issue-16/swift-classes-vs-structs.html) has a great overview of the differences and ideal Use Cases for ```structs```
+[^class-vs-struct]: This is the perfect candidate for usage of a ```struct``` instead of a ```class```. We don't need for this to be subclassed, or any disposal semantics in ```dealloc```. Reference counting is totally unnecessary as this structure represents an Immutable value. I'd love to take a look at the performance of passing structs around, [it looks like Array and Dictionary struct types use copy-on-write](https://devforums.apple.com/message/990361#990361) but I have no idea if this applies to User defined structs. [Andy Matuschak](http://www.objc.io/issue-16/swift-classes-vs-structs.html) has a great overview of the differences and ideal Use Cases for ```structs```.
+
+[^struct-multiple-return]: This could also be put in a tuple as it is essentially just used for multiple-return in a method. However, creating inner or standalone classes/structures in Swift is so easy to do that it can give some information about the relationship between the returned data.
 
 [^string-nsstring]: Ok I lied, there I use a lot of Bridging functions that use ```NSString```, but an ```NSString``` is instantly converted to a Swift ```String```

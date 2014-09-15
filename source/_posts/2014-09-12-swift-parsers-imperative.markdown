@@ -13,7 +13,7 @@ categories:
 - Backends
 ---
 
-In the [previous post](/blog/2014/09/12/swift-parsers-introduction/) I talked about some of the possible requirements for a Parser that extracts data from a Serialization Format and places it in a Language-Native Model. In this post I'll cover how an XML Parser for a Model Object can be built using some of the familiar Imperative features of Swift. Sample Code is [available on GitHub](http://github.com/lawrencelomax/XMLParsable).
+In the [previous post](/blog/2014/09/12/swift-parsers-introduction/) I talked about some of the possible requirements for a Parser that extracts data from a Serialization Format and places it in a Language-Native Model. In this post I'll cover how an XML Parser for a Model Object can be built using some of the familiar Imperative features of Swift. Sample Code for this and future posts [available on GitHub](http://github.com/lawrencelomax/XMLParsable).
 
 ### Model and XML
 

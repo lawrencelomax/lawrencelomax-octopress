@@ -15,7 +15,7 @@ categories:
 
 In the [previous post](/blog/2014/09/12/swift-parsers-imperative/) we built a ```decode``` function to parse data out from XML and into an ```Animal``` Model using Imperative techniques. This required some efforts in order to satisfy some of the robustness requirements from the [first post](/blog/2014/09/12/swift-parsers-introduction/).
 
-In this post we'll cover how we can use Functional Programming techniques on top of the language features of Swift to decode XML to an ```Animal``` model. This post assumes that you are comfortable with the [Parameterized Types and Generics](https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/Swift_Programming_Language/Generics.html#//apple_ref/doc/uid/TP40014097-CH26-XID_278).
+In this post we'll cover how we can use Functional Programming techniques on top of the language features of Swift to decode XML to an ```Animal``` model. This post assumes that you are comfortable with the [Parameterized Types and Generics](https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/Swift_Programming_Language/Generics.html#//apple_ref/doc/uid/TP40014097-CH26-XID_278). Sample Code for is [available on GitHub](http://github.com/lawrencelomax/XMLParsable).
 
 ### Thinking Functionally
 
