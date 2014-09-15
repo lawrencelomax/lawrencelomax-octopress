@@ -353,7 +353,7 @@ This will result in a substantially different implementation to the previous thr
 
 One of the great aspects of building an XML Parser in this way is that the implementations are trivial to swap out and can be tested against for correctness against the same Parsing Code. Additionally, we can use the new Performance Testing features of Xcode 6 to see how the performance varies in these differing implementations. The code is all available on [GitHub for your viewing pleasure](http://github.com/lawrencelomax/XMLParsable).
 
-The correctness testing is relatively simple, just run the same suite of tests over a fixed XML resource and verify that all of the properties in the Model are set to the values in the resource.
+The correctness testing is relatively simple, just run the same suite of tests over a fixed XML resource and verify that all of the properties in the Model are set to the values in the resource. Proof of Correctness through Logic Test on each of the implementations of the Protocol give us a high degree of confidence when we use any of the implementations.
 
 {% img right /images/posts/swift_parsers/unit_results.png "Unit Test Results: Great Success" "Unit Test Results: Great Success" %}
 
